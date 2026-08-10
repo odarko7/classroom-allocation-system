@@ -38,8 +38,8 @@ export default function LoginPage() {
             className="input"
             type="email"
             required
-            autoComplete="email"
-            placeholder="admin@example.com"
+            autoComplete="off"
+            placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -50,8 +50,8 @@ export default function LoginPage() {
             className="input"
             type="password"
             required
-            autoComplete="current-password"
-            placeholder="••••••••"
+            autoComplete="new-password"
+            placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

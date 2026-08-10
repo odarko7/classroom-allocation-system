@@ -79,7 +79,8 @@ export default function TimetablePage() {
       {startTimes.length === 0 ? (
         <div className="empty">No allocations match the current filters.</div>
       ) : (
-        <div className="tt-grid">
+        <div className="tt-grid-wrap">
+          <div className="tt-grid">
           <div className="tt-head">Time</div>
           {DAYS.map((d) => (
             <div className="tt-head" key={d}>
@@ -109,6 +110,7 @@ export default function TimetablePage() {
               })}
             </div>
           ))}
+        </div>
         </div>
       )}
     </div>
