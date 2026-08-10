@@ -1,0 +1,66 @@
+{
+  "simulatedData": true,
+  "timestamp": "2026-08-10T18:23:58.883Z",
+  "semesterId": 2,
+  "metrics": [
+    {
+      "metric": "Conflicts",
+      "baseline": 351,
+      "greedy": 0,
+      "optimized": 0
+    },
+    {
+      "metric": "Unallocated courses",
+      "baseline": 0,
+      "greedy": 2,
+      "optimized": 2
+    },
+    {
+      "metric": "Average utilization (%)",
+      "baseline": 3.1,
+      "greedy": 13,
+      "optimized": 13
+    },
+    {
+      "metric": "Capacity efficiency (%)",
+      "baseline": 2.8,
+      "greedy": 5.7,
+      "optimized": 5.7
+    },
+    {
+      "metric": "Average allocation score (%)",
+      "baseline": 50.8,
+      "greedy": 96.4,
+      "optimized": 96.4
+    },
+    {
+      "metric": "Execution time (ms)",
+      "baseline": 13,
+      "greedy": 218,
+      "optimized": 1380
+    },
+    {
+      "metric": "Allocations created",
+      "baseline": 106,
+      "greedy": 104,
+      "optimized": 104
+    }
+  ],
+  "details": [
+    {
+      "allocated": 106,
+      "unallocated": 0,
+      "groups": 106
+    },
+    {
+      "allocated": 104,
+      "unallocated": 2,
+      "groups": 106
+    },
+    {
+      "allocated": 104,
+      "unallocated": 2,
+      "groups": 106
+    }
+  ]
+}
