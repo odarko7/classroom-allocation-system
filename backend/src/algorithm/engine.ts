@@ -231,8 +231,46 @@ export class AllocationEngine {
         const candidates = this.findCandidateRooms(gc);
         const passing = candidates.filter((c) => c.failReasons.length === 0);
         if (passing.length === 0) {
-          const reason = candidates.length === 0 ? 'No active classrooms exist' : `No room satisfies hard constraints (${candidates[0].failReasons.join('; ')})`;
-          unallocated.push({ groupId: gc.group.id, courseCode: gc.course.course_code, groupName: gc.group.name, studentCount: gc.group.student_count, reason });
+          const hasRooms = candidates.length > 0;
+          const onlyCapacity = hasRooms && candidates.every((c) => c.failReasons.length > 0 && c.failReasons.every((r) => r.startsWith('Capacity insufficient')));
+          let forced = false;
+          if (onlyCapacity) {
+            const lecturerId = gc.group.lecturer_id ?? gc.course.lecturer_id;
+            const byCapacity = [...candidates].sort((a, b) => b.classroom.capacity - a.classroom.capacity);
+            for (const room of byCapacity) {
+              const slot = this.findAvailableSlot(room.classroom.id, lecturerId, gc.group.id, slots, ctx);
+              if (!slot) continue;
+              const a = this.calculateScore(gc, room, slot, ctx, totalWeeklyHours);
+              const allocId = allocationRepo.create({
+                groupId: gc.group.id, courseId: gc.course.id, classroomId: room.classroom.id, timeSlotId: slot.id,
+                semesterId, lecturerId, status: 'PROPOSED', score: a.score, createdBy,
+              });
+              allocationRepo.addScore({
+                allocationId: allocId, total: a.score, capacity: 0, facilities: a.factors.facilities,
+                availability: 1, utilization: a.factors.utilization, location: a.factors.location,
+                department: a.factors.department,
+                explanation: JSON.stringify({ capacitySuitable: false, overCapacity: true, note: 'Allocated despite insufficient capacity to surface a capacity conflict' }),
+                rejectedAlternatives: '[]',
+              });
+              if (!ctx.classroomSlots.has(room.classroom.id)) ctx.classroomSlots.set(room.classroom.id, new Set());
+              ctx.classroomSlots.get(room.classroom.id)!.add(slot.id);
+              if (lecturerId) {
+                if (!ctx.lecturerSlots.has(lecturerId)) ctx.lecturerSlots.set(lecturerId, new Set());
+                ctx.lecturerSlots.get(lecturerId)!.add(slot.id);
+              }
+              if (!ctx.groupSlots.has(gc.group.id)) ctx.groupSlots.set(gc.group.id, new Set());
+              ctx.groupSlots.get(gc.group.id)!.add(slot.id);
+              forced = true;
+              allocatedCount++;
+              scoreSum += a.score;
+              warnings.push(`${gc.course.course_code}: ${gc.group.student_count} students exceed every room capacity; allocated to ${room.classroom.room_code} (${room.classroom.capacity}) and flagged as a capacity conflict.`);
+              break;
+            }
+          }
+          if (!forced) {
+            const reason = hasRooms ? `No room satisfies hard constraints (${candidates[0].failReasons.join('; ')})` : 'No active classrooms exist';
+            unallocated.push({ groupId: gc.group.id, courseCode: gc.course.course_code, groupName: gc.group.name, studentCount: gc.group.student_count, reason });
+          }
           continue;
         }
 

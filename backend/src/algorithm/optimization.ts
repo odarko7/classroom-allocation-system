@@ -1,4 +1,4 @@
-import { all, get, insert, tx } from '../utils/db.ts';
+import { all, get, insert, run, tx } from '../utils/db.ts';
 import { allocationRepo } from '../repositories/allocationRepo.ts';
 import type { AllocationRow, CourseRow, StudentGroupRow, TimeSlotRow } from '../models/types.ts';
 import { AllocationEngine, buildSlotContext, slotHours, type CandidateRoom, type GroupContext } from './engine.ts';
@@ -51,8 +51,6 @@ export function optimizeAllocations(semesterId: number, createdBy: number | null
   let moved = 0;
 
   for (let pass = 0; pass < 3; pass++) {
-    const existing = allocationRepo.findExisting(semesterId).filter((a) => a.status !== 'REJECTED');
-
     const rows = allocationRepo.findBySemester(semesterId)
       .filter((r) => r.status === 'PROPOSED')
       .sort((a, b) => (Number(a.total_score) || 0) - (Number(b.total_score) || 0));
@@ -63,7 +61,8 @@ export function optimizeAllocations(semesterId: number, createdBy: number | null
       const lecturerId = gc.group.lecturer_id ?? gc.course.lecturer_id;
       const current = row as unknown as AllocationRow;
 
-      // Temporarily release the current allocation, then scan all (room, slot) pairs
+      // Fresh snapshot so each move sees all moves made earlier in this pass.
+      const existing = allocationRepo.findExisting(semesterId).filter((a) => a.status !== 'REJECTED');
       const context = buildSlotContext(existing.filter((a) => a.id !== current.id), semesterId);
       const passing: CandidateRoom[] = engine.findCandidateRooms(gc).filter((c) => c.failReasons.length === 0);
 
@@ -102,12 +101,18 @@ export function optimizeAllocations(semesterId: number, createdBy: number | null
   const improvement = Math.round((after.averageScore - before.averageScore) * 10) / 10;
   const groupNote = groupsCreated > 0 ? `${groupsCreated} new group(s) auto-created for courses without a group. ` : '';
 
+  // Persist the live conflicts for this semester so they appear on the Conflicts page.
+  const liveConflicts = engine.detectConflicts(allocationRepo.findExisting(semesterId), semesterId);
+  run(`DELETE FROM allocation_conflicts WHERE allocation_id IN (SELECT id FROM allocations WHERE semester_id = ?)`, [semesterId]);
+  for (const c of liveConflicts) allocationRepo.addConflict(c.allocationId, c.type, c.description, c.severity);
+  const conflictNote = liveConflicts.length > 0 ? `${liveConflicts.length} conflict(s) detected (${liveConflicts.filter((c) => c.type === 'CAPACITY').length} capacity). ` : '';
+
   return {
     before,
     after,
     improved: improvement > 0 ? improvement : 0,
     moved,
-    message: groupNote + (moved > 0
+    message: groupNote + conflictNote + (moved > 0
       ? `Optimization improved ${moved} allocation(s). Average score ${before.averageScore}% -> ${after.averageScore}%.`
       : 'Optimization completed. No further improvements found.'),
   };

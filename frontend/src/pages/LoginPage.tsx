@@ -23,8 +23,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [emailReadOnly, setEmailReadOnly] = useState(true);
-  const [passwordReadOnly, setPasswordReadOnly] = useState(true);
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -167,9 +165,6 @@ export default function LoginPage() {
                   name="email"
                   placeholder="Enter your email"
                   value={email}
-                  readOnly={emailReadOnly}
-                  onFocus={() => setEmailReadOnly(false)}
-                  onMouseDown={() => setEmailReadOnly(false)}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
@@ -190,9 +185,6 @@ export default function LoginPage() {
                   name="password"
                   placeholder="Enter your password"
                   value={password}
-                  readOnly={passwordReadOnly}
-                  onFocus={() => setPasswordReadOnly(false)}
-                  onMouseDown={() => setPasswordReadOnly(false)}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button type="button" className="input-toggle" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
