@@ -14,6 +14,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
 }
@@ -36,6 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user);
   };
 
+  const register = async (name: string, email: string, password: string) => {
+    const result = await api.post<LoginResponse>('/auth/register', { name, email, password });
+    setToken(result.token);
+    setStoredUser(result.user);
+    setTokenState(result.token);
+    setUser(result.user);
+  };
+
   const logout = () => {
     api.post('/auth/logout').catch(() => undefined);
     setToken(null);
@@ -46,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (...roles: Role[]) => (user ? roles.includes(user.role) : false);
 
-  const value = useMemo(() => ({ user, token, login, logout, hasRole }), [user, token, login, logout, hasRole]);
+  const value = useMemo(() => ({ user, token, login, register, logout, hasRole }), [user, token, login, register, logout, hasRole]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

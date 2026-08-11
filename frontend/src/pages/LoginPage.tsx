@@ -2,9 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
-const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@example.com', password: 'Admin@123' },
-];
+type Mode = 'login' | 'register';
+
+const DEMO_ACCOUNTS = [{ label: 'Admin', email: 'admin@example.com', password: 'Admin@123' }];
 
 const FEATURES = [
   { title: 'Smart allocation', desc: 'Auto-assign rooms by capacity, facilities & time' },
@@ -13,34 +13,52 @@ const FEATURES = [
 ];
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailReadOnly, setEmailReadOnly] = useState(true);
   const [passwordReadOnly, setPasswordReadOnly] = useState(true);
 
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setError(null);
+    setPassword('');
+    setConfirm('');
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === 'register' && password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password);
+      if (mode === 'register') {
+        await register(name.trim(), email, password);
+      } else {
+        await login(email, password);
+      }
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed.');
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemo = (account: (typeof DEMO_ACCOUNTS)[number]) => {
+  const fillDemo = () => {
     setError(null);
-    setEmail(account.email);
-    setPassword(account.password);
+    setEmail(DEMO_ACCOUNTS[0].email);
+    setPassword(DEMO_ACCOUNTS[0].password);
   };
 
   return (
@@ -75,12 +93,64 @@ export default function LoginPage() {
         <div className="login-panel">
           <div className="login-logo">CA</div>
           <form className="login-card" onSubmit={handleSubmit} autoComplete="off">
+            <div className="auth-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                className={`auth-tab${mode === 'login' ? ' active' : ''}`}
+                onClick={() => switchMode('login')}
+                disabled={loading}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                role="tab"
+                className={`auth-tab${mode === 'register' ? ' active' : ''}`}
+                onClick={() => switchMode('register')}
+                disabled={loading}
+              >
+                Create account
+              </button>
+            </div>
+
             <div className="login-card-head">
-              <h2>Welcome back</h2>
-              <p className="login-sub">Sign in to continue to your dashboard.</p>
+              {mode === 'login' ? (
+                <>
+                  <h2>Welcome back</h2>
+                  <p className="login-sub">Sign in to continue to your dashboard.</p>
+                </>
+              ) : (
+                <>
+                  <h2>Create your account</h2>
+                  <p className="login-sub">Join to view and share timetables.</p>
+                </>
+              )}
             </div>
 
             {error && <div className="banner error">{error}</div>}
+
+            {mode === 'register' && (
+              <label className="field">
+                <span className="field-label">Full name</span>
+                <div className="input-wrap">
+                  <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <input
+                    className="input input-iconed"
+                    type="text"
+                    required
+                    autoComplete="name"
+                    name="name"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+              </label>
+            )}
 
             <label className="field">
               <span className="field-label">Email</span>
@@ -93,7 +163,7 @@ export default function LoginPage() {
                   className="input input-iconed"
                   type="email"
                   required
-                  autoComplete="off"
+                  autoComplete="email"
                   name="email"
                   placeholder="Enter your email"
                   value={email}
@@ -116,7 +186,7 @@ export default function LoginPage() {
                   className="input input-iconed input-with-toggle"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="new-password"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   name="password"
                   placeholder="Enter your password"
                   value={password}
@@ -141,21 +211,45 @@ export default function LoginPage() {
               </div>
             </label>
 
+            {mode === 'register' && (
+              <label className="field">
+                <span className="field-label">Confirm password</span>
+                <div className="input-wrap">
+                  <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  <input
+                    className="input input-iconed input-with-toggle"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="new-password"
+                    name="confirm"
+                    placeholder="Re-enter your password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                  />
+                </div>
+              </label>
+            )}
+
             <button className="btn btn-primary btn-login" type="submit" disabled={loading}>
               {loading && <span className="spinner spinner-btn" aria-hidden="true" />}
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
 
-            <div className="login-demo">
-              <span className="login-demo-label">Quick demo access</span>
-              <div className="login-demo-chips">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <button type="button" key={a.label} className="demo-chip" onClick={() => fillDemo(a)} disabled={loading}>
-                    {a.label}
+            {mode === 'register' ? (
+              <p className="auth-hint">New accounts are created with viewer access. Contact an admin to upgrade your role.</p>
+            ) : (
+              <div className="login-demo">
+                <span className="login-demo-label">Quick demo access</span>
+                <div className="login-demo-chips">
+                  <button type="button" className="demo-chip" onClick={fillDemo} disabled={loading}>
+                    {DEMO_ACCOUNTS[0].label}
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
+            )}
           </form>
         </div>
       </div>

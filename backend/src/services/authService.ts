@@ -22,6 +22,21 @@ export function login(email: string, password: string) {
   };
 }
 
+export function register(name: string, email: string, password: string) {
+  const normalized = email.toLowerCase().trim();
+  if (userRepo.findByEmail(normalized)) {
+    throw new ApiError(409, 'An account with this email already exists.');
+  }
+  const id = userRepo.create({ name, email: normalized, passwordHash: hashPassword(password), role: 'VIEWER' });
+  const user = userRepo.findById(id)!;
+  const token = signToken({ sub: user.id, email: user.email, role: user.role, name: user.name });
+  writeAuditLog({ userId: user.id, username: user.email, action: 'USER_REGISTERED', entityType: 'user', entityId: user.id });
+  return {
+    token,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, departmentId: user.department_id },
+  };
+}
+
 export function me(userId: number) {
   const user = userRepo.findById(userId);
   if (!user) throw new ApiError(404, 'User not found.');

@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAutoRefresh } from '../api/useAutoRefresh';
 import type { AnalyticsSummary, DashboardCounts } from '../api/types';
 import { ErrorBanner, ProgressBar, Spinner } from '../components/Shared';
+import { useAuth } from '../auth/AuthContext';
 
 interface NotificationItem {
   id: number;
@@ -10,14 +13,31 @@ interface NotificationItem {
   created_at: string;
 }
 
+const VIEWER_LINKS = [
+  {
+    to: '/allocations',
+    title: 'Allocations',
+    desc: 'Browse proposed and approved room schedules.',
+    icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z',
+  },
+  {
+    to: '/timetable',
+    title: 'Timetable',
+    desc: 'View the full timetable or filter by student group.',
+    icon: 'M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M12 15l2 2 4-4',
+  },
+];
+
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const isViewer = user?.role === 'VIEWER';
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [counts, setCounts] = useState<DashboardCounts | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     Promise.all([
       api.get<AnalyticsSummary>('/analytics/summary'),
       api.get<DashboardCounts>('/dashboard'),
@@ -27,14 +47,23 @@ export default function DashboardPage() {
         setSummary(s);
         setCounts(c);
         setNotifications(n.rows.slice(0, 8));
+        setError(null);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load dashboard.'))
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useAutoRefresh(load, 30000);
+
   if (loading) return <Spinner />;
 
   const s = summary;
+
+  const firstName = user?.name?.trim().split(/\s+/)[0] ?? 'there';
 
   const statCards: { label: string; value: string; sub?: string }[] = s
     ? [
@@ -49,7 +78,30 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="page-title">Dashboard</h1>
+      {isViewer ? (
+        <div className="welcome-hero">
+          <div className="welcome-hero-glow" aria-hidden="true" />
+          <h1>Welcome back, {firstName}!</h1>
+          <p>Here's a quick overview of the classroom allocation system. Explore the schedules below.</p>
+          <div className="welcome-links">
+            {VIEWER_LINKS.map((l) => (
+              <Link key={l.to} to={l.to} className="welcome-link">
+                <span className="welcome-link-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d={l.icon} />
+                  </svg>
+                </span>
+                <span>
+                  <strong>{l.title}</strong>
+                  <span>{l.desc}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <h1 className="page-title">Dashboard</h1>
+      )}
       <ErrorBanner message={error} />
       <div className="grid grid-4">
         {statCards.map((c) => (

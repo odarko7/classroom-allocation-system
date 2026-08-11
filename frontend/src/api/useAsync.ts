@@ -13,18 +13,20 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncSt
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const fnRef = useRef(fn);
+  const hasDataRef = useRef(false);
   fnRef.current = fn;
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    if (!hasDataRef.current) setLoading(true);
     setError(null);
     fnRef
       .current()
       .then((result) => {
         if (active) {
+          hasDataRef.current = true;
           setData(result);
           setLoading(false);
         }

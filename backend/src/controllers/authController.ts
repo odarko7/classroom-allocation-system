@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { login, me, logout } from '../services/authService.ts';
+import { login, me, logout, register } from '../services/authService.ts';
 import { userRepo } from '../repositories/userRepo.ts';
 import { hashPassword } from '../security/password.ts';
 import { writeAuditLog } from '../services/notificationService.ts';
@@ -9,6 +9,12 @@ export function loginHandler(req: Request, res: Response): void {
   const { email, password } = req.body;
   const result = login(email, password);
   res.json(result);
+}
+
+export function registerHandler(req: Request, res: Response): void {
+  const { name, email, password } = req.body;
+  const result = register(name, email, password);
+  res.status(201).json(result);
 }
 
 export function meHandler(req: AuthenticatedRequest, res: Response): void {

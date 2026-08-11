@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { useAsync } from '../api/useAsync';
+import { useAutoRefresh } from '../api/useAutoRefresh';
 import type { Allocation, Department, Paginated, Semester } from '../api/types';
 import { ErrorBanner, Pagination, ProgressBar, Spinner, StatusBadge, SuccessBanner, Table } from '../components/Shared';
 import { useAuth } from '../auth/AuthContext';
@@ -27,6 +28,8 @@ export default function AllocationsPage() {
   const { data, loading, error, reload } = useAsync<Paginated<Allocation>>(() => api.get(`/allocations?${query}`), [query]);
   const semesters = useAsync<Semester[]>(() => api.get('/semesters'));
   const departments = useAsync<Department[]>(() => api.get('/departments'));
+
+  useAutoRefresh(reload, 20000);
 
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

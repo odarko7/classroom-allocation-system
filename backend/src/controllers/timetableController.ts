@@ -30,7 +30,7 @@ const BASE = `
 `;
 
 export function timetableHandler(req: AuthenticatedRequest, res: Response): void {
-  const { semester, classroom, lecturer, department, course, day } = req.query as Record<string, string>;
+  const { semester, classroom, lecturer, department, course, group, day } = req.query as Record<string, string>;
   const conditions: string[] = [];
   const params: unknown[] = [];
   if (semester) { conditions.push(`a.semester_id = ?`); params.push(Number(semester)); }
@@ -38,6 +38,7 @@ export function timetableHandler(req: AuthenticatedRequest, res: Response): void
   if (lecturer) { conditions.push(`a.lecturer_id = ?`); params.push(Number(lecturer)); }
   if (department) { conditions.push(`co.department_id = ?`); params.push(Number(department)); }
   if (course) { conditions.push(`a.course_id = ?`); params.push(Number(course)); }
+  if (group) { conditions.push(`a.group_id = ?`); params.push(Number(group)); }
   if (day !== undefined) { conditions.push(`ts.day = ?`); params.push(Number(day)); }
   const where = conditions.length ? ` AND ${conditions.join(' AND ')}` : '';
   const rows = all<TimetableCell>(BASE + where + ` ORDER BY ts.day, ts.start_time`, params);

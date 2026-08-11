@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { toggleTheme } from '../theme';
@@ -26,6 +26,8 @@ const NAV_ITEMS: { to: string; label: string; icon: string; end?: boolean; roles
   { to: '/audit', label: 'Audit Logs', icon: 'M12 8v4l3 3 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', roles: ['SUPER_ADMIN', 'ADMIN'] },
 ];
 
+const VIEWER_ALLOWED = ['/', '/allocations', '/timetable'];
+
 export function Layout() {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +35,12 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const current = NAV_ITEMS.find((item) => (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)));
+
+  useEffect(() => {
+    if (user?.role === 'VIEWER' && location.pathname !== '/' && !VIEWER_ALLOWED.some((p) => (p === '/' ? false : location.pathname.startsWith(p)))) {
+      navigate('/', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -50,7 +58,11 @@ export function Layout() {
           </div>
         </div>
         <nav className="nav">
-          {NAV_ITEMS.filter((item) => !item.roles || hasRole(...item.roles)).map((item) => (
+          {NAV_ITEMS.filter((item) => {
+            if (item.roles && !hasRole(...item.roles)) return false;
+            if (user?.role === 'VIEWER' && !VIEWER_ALLOWED.includes(item.to)) return false;
+            return true;
+          }).map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')} onClick={() => setSidebarOpen(false)}>
               <NavIcon d={item.icon} />
               <span>{item.label}</span>

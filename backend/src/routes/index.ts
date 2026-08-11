@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { classroomRepo } from '../repositories/classroomRepo.ts';
-import { loginHandler, meHandler, logoutHandler, listUsersHandler, createUserHandler } from '../controllers/authController.ts';
+import { loginHandler, registerHandler, meHandler, logoutHandler, listUsersHandler, createUserHandler } from '../controllers/authController.ts';
 import {
   listClassrooms, getClassroom, createClassroom, updateClassroom, deleteClassroom,
   listCourses, getCourse, createCourse, updateCourse, deleteCourse,
@@ -34,6 +34,7 @@ const router = Router();
 
 // ---- Public auth ----
 router.post('/auth/login', validateBody(z.object({ email: z.string().email(), password: z.string().min(1) })), loginHandler);
+router.post('/auth/register', validateBody(z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) })), registerHandler);
 
 // ---- Everything else requires authentication ----
 router.use(authenticate);
