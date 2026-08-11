@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { toggleTheme } from '../theme';
 import type { Role } from '../api/types';
@@ -29,7 +29,10 @@ const NAV_ITEMS: { to: string; label: string; icon: string; end?: boolean; roles
 export function Layout() {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const current = NAV_ITEMS.find((item) => (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)));
 
   const handleLogout = () => {
     logout();
@@ -64,7 +67,7 @@ export function Layout() {
               <span />
               <span />
             </button>
-            <div className="topbar-title">Optimal Classroom Allocation</div>
+            <div className="topbar-title">{current?.label ?? 'Dashboard'}</div>
           </div>
           <div className="user-box">
             <div className="user-info">
