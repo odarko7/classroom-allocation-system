@@ -192,8 +192,4 @@ export const SEMESTERS = [
 
 export const DEMO_USERS = [
   { name: 'System Administrator', email: 'admin@example.com', password: 'Admin@123', role: 'SUPER_ADMIN', department: null },
-  { name: 'Resource Manager', email: 'manager@example.com', password: 'Manager@123', role: 'ADMIN', department: null },
-  { name: 'Head of Computer Science', email: 'hod@example.com', password: 'Hod@123', role: 'HOD', department: 'CS' },
-  { name: 'Dr. Amina Yusuf', email: 'lecturer@example.com', password: 'Lecturer@123', role: 'LECTURER', department: 'CS' },
-  { name: 'Guest Viewer', email: 'viewer@example.com', password: 'Viewer@123', role: 'VIEWER', department: null },
 ];

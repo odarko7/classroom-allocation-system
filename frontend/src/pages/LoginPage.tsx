@@ -4,9 +4,6 @@ import { useAuth } from '../auth/AuthContext';
 
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@example.com', password: 'Admin@123' },
-  { label: 'Manager', email: 'manager@example.com', password: 'Manager@123' },
-  { label: 'HOD', email: 'hod@example.com', password: 'Hod@123' },
-  { label: 'Lecturer', email: 'lecturer@example.com', password: 'Lecturer@123' },
 ];
 
 const FEATURES = [

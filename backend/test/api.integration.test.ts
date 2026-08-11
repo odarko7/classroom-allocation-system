@@ -98,8 +98,9 @@ test('admin can create and delete a classroom', async () => {
   await call('DELETE', `/classrooms/${id}`, undefined, 200);
 });
 
-test('lecturer role cannot create a classroom (403)', async () => {
-  const login = await call('POST', '/auth/login', { email: 'lecturer@example.com', password: 'Lecturer@123' });
+test('non-admin role cannot create a classroom (403)', async () => {
+  await call('POST', '/users', { name: 'Test Lecturer', email: 'testlecturer@example.com', password: 'Test12345', role: 'LECTURER' }, 201);
+  const login = await call('POST', '/auth/login', { email: 'testlecturer@example.com', password: 'Test12345' });
   const lectToken = login.json.token;
   const res = await fetch(base + '/classrooms', {
     method: 'POST',
@@ -179,10 +180,17 @@ test('evaluation runs and reports metrics', async () => {
 });
 
 test('viewer can read but not write', async () => {
-  const login = await call('POST', '/auth/login', { email: 'viewer@example.com', password: 'Viewer@123' });
+  await call('POST', '/users', { name: 'Test Viewer', email: 'testviewer@example.com', password: 'Test12345', role: 'VIEWER' }, 201);
+  const login = await call('POST', '/auth/login', { email: 'testviewer@example.com', password: 'Test12345' });
   const vt = login.json.token;
   const read = await fetch(base + '/classrooms?pageSize=1', { headers: { Authorization: `Bearer ${vt}` } });
   assert.equal(read.status, 200);
+  const write = await fetch(base + '/classrooms', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${vt}` },
+    body: JSON.stringify({ roomCode: 'X2', building: 'A', capacity: 20, roomType: 'Seminar Room' }),
+  });
+  assert.equal(write.status, 403);
 });
 
 test('logout works', async () => {

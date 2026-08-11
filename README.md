@@ -96,15 +96,11 @@ detecting scheduling conflicts.
 
 6. Open **http://localhost:5173** and sign in (see demo accounts below).
 
-### Demo Accounts
+### Demo Account
 
-| Role           | Email                 | Password        |
-| -------------- | --------------------- | --------------- |
-| Super Admin    | `admin@example.com`   | `Admin@123`     |
-| Admin          | `manager@example.com` | `Manager@123`   |
-| HOD            | `hod@example.com`     | `Hod@123`       |
-| Lecturer       | `lecturer@example.com`| `Lecturer@123`  |
-| Viewer         | `viewer@example.com`  | `Viewer@123`    |
+| Role           | Email                 | Password     |
+| -------------- | --------------------- | ------------ |
+| Super Admin    | `admin@example.com`   | `Admin@123`  |
 
 ## Scripts
 

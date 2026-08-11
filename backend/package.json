@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "db:init": "node src/db/init.ts",
     "db:seed": "node src/db/seed.ts",
-    "test": "node --test test/",
+    "test": "node --test \"test/*.test.ts\"",
     "test:algorithm": "node --test test/algorithm.test.ts",
     "eval": "node test/evaluation.ts"
   },
