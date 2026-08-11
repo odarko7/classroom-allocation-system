@@ -1,4 +1,4 @@
-import { all, get, tx } from '../utils/db.ts';
+import { all, get, insert, tx } from '../utils/db.ts';
 import { allocationRepo } from '../repositories/allocationRepo.ts';
 import type { AllocationRow, CourseRow, StudentGroupRow, TimeSlotRow } from '../models/types.ts';
 import { AllocationEngine, buildSlotContext, slotHours, type CandidateRoom, type GroupContext } from './engine.ts';
@@ -20,8 +20,26 @@ function metricsFor(semesterId: number, engine: AllocationEngine, unallocatedGro
   return { allocations: rows.length, averageScore, conflicts, unallocated: unallocatedGroups };
 }
 
+function ensureGroupsForSemester(semesterId: number): number {
+  const courses = all<{ id: number; course_code: string; name: string; lecturer_id: number | null; student_count: number }>(
+    `SELECT id, course_code, name, lecturer_id, student_count FROM courses`,
+  );
+  let created = 0;
+  for (const c of courses) {
+    const existing = get<{ id: number }>(`SELECT id FROM student_groups WHERE course_id = ? AND semester_id = ?`, [c.id, semesterId]);
+    if (existing) continue;
+    insert(
+      `INSERT INTO student_groups (name, course_id, lecturer_id, semester_id, student_count) VALUES (?, ?, ?, ?, ?)`,
+      [`${c.course_code} Section 1`, c.id, c.lecturer_id, semesterId, c.student_count],
+    );
+    created++;
+  }
+  return created;
+}
+
 export function optimizeAllocations(semesterId: number, createdBy: number | null): OptimizationResult {
   const engine = new AllocationEngine(loadWeights());
+  const groupsCreated = ensureGroupsForSemester(semesterId);
 
   // Step 1: greedy baseline
   const base = engine.generateAllocations(semesterId, createdBy);
@@ -82,15 +100,16 @@ export function optimizeAllocations(semesterId: number, createdBy: number | null
 
   const after = metricsFor(semesterId, engine, base.unallocated.length);
   const improvement = Math.round((after.averageScore - before.averageScore) * 10) / 10;
+  const groupNote = groupsCreated > 0 ? `${groupsCreated} new group(s) auto-created for courses without a group. ` : '';
 
   return {
     before,
     after,
     improved: improvement > 0 ? improvement : 0,
     moved,
-    message: moved > 0
+    message: groupNote + (moved > 0
       ? `Optimization improved ${moved} allocation(s). Average score ${before.averageScore}% -> ${after.averageScore}%.`
-      : 'Optimization completed. No further improvements found.',
+      : 'Optimization completed. No further improvements found.'),
   };
 }
 
