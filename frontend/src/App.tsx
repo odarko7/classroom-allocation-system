@@ -7,7 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import ClassroomsPage from './pages/ClassroomsPage';
 import CoursesPage from './pages/CoursesPage';
 import LecturersPage from './pages/LecturersPage';
-import GroupsPage from './pages/GroupsPage';import AllocationsPage from './pages/AllocationsPage';
+import AllocationsPage from './pages/AllocationsPage';
 import ConflictsPage from './pages/ConflictsPage';
 import TimetablePage from './pages/TimetablePage';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -47,7 +47,6 @@ export default function App() {
         <Route path="/classrooms" element={<ClassroomsPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/lecturers" element={<LecturersPage />} />
-        <Route path="/groups" element={<GroupsPage />} />
         <Route path="/allocations" element={<AllocationsPage />} />
         <Route path="/conflicts" element={<ConflictsPage />} />
         <Route path="/timetable" element={<TimetablePage />} />

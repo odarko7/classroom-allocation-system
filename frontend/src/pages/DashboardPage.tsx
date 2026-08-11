@@ -44,7 +44,6 @@ export default function DashboardPage() {
         { label: 'Students', value: String(s.totalStudents) },
         { label: 'Allocations', value: String(s.totalAllocations), sub: `${s.approvedAllocations} approved · ${s.proposedAllocations} proposed` },
         { label: 'Conflicts', value: String(s.conflicts) },
-        { label: 'Unallocated Groups', value: String(s.unallocatedGroups), sub: `${s.totalGroups} total groups` },
       ]
     : [];
 
