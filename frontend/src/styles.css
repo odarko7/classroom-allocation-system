@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --bg: #f4f6fb;
   --surface: #ffffff;
   --surface-2: #f8fafc;
@@ -287,6 +288,44 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.theme-toggle:hover {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.theme-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.theme-icon-sun {
+  display: none;
+}
+
+[data-theme='dark'] .theme-icon-moon {
+  display: none;
+}
+
+[data-theme='dark'] .theme-icon-sun {
+  display: block;
 }
 
 .user-info {
@@ -1335,4 +1374,130 @@ button {
   .tt-grid {
     grid-template-columns: 60px repeat(7, 150px);
   }
+}
+
+/* ---------- Dark theme ---------- */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --surface: #101827;
+  --surface-2: #16202f;
+  --border: #263448;
+  --border-soft: #1d2937;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --primary: #3b82f6;
+  --primary-dark: #60a5fa;
+  --primary-soft: #172a47;
+  --success: #22c55e;
+  --success-soft: #103324;
+  --warning: #f59e0b;
+  --warning-soft: #3a2d10;
+  --danger: #ef4444;
+  --danger-soft: #3a1418;
+  --info: #22d3ee;
+  --info-soft: #0d3033;
+  --sidebar-bg: #0a1018;
+  --sidebar-text: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme='dark'] body {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(1000px 500px at -10% 110%, rgba(139, 92, 246, 0.06), transparent 60%),
+    var(--bg);
+}
+
+[data-theme='dark'] .topbar {
+  background: rgba(16, 24, 39, 0.85);
+}
+
+[data-theme='dark'] .table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+[data-theme='dark'] .badge-success {
+  background: var(--success-soft);
+  color: #86efac;
+  border-color: #14532d;
+}
+
+[data-theme='dark'] .badge-warning {
+  background: var(--warning-soft);
+  color: #fcd34d;
+  border-color: #78350f;
+}
+
+[data-theme='dark'] .badge-danger {
+  background: var(--danger-soft);
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+[data-theme='dark'] .badge-info {
+  background: var(--info-soft);
+  color: #67e8f9;
+  border-color: #164e63;
+}
+
+[data-theme='dark'] .badge-default {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .banner.error {
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+[data-theme='dark'] .banner.success {
+  color: #86efac;
+  border-color: #14532d;
+}
+
+[data-theme='dark'] .progress {
+  background: #263448;
+}
+
+[data-theme='dark'] .spinner {
+  border-color: #263448;
+}
+
+[data-theme='dark'] .empty {
+  border-color: #334155;
+}
+
+[data-theme='dark'] .tt-entry {
+  border-color: #2563eb;
+}
+
+[data-theme='dark'] .login-card {
+  background: rgba(16, 24, 39, 0.98);
+}
+
+[data-theme='dark'] .login-card h1 {
+  color: var(--text);
+}
+
+[data-theme='dark'] .card,
+[data-theme='dark'] .stat-card,
+[data-theme='dark'] .table-wrap,
+[data-theme='dark'] .empty {
+  background: var(--surface);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }

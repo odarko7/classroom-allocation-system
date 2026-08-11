@@ -90,13 +90,13 @@ export default function DashboardPage() {
               <ProgressBar value={s.capacityEfficiency} />
             </div>
             <div className="grid grid-2" style={{ marginTop: 12 }}>
-              <div className="stat-card" style={{ border: 'none', boxShadow: 'none', background: '#f8fafc' }}>
+              <div className="stat-card" style={{ border: 'none', boxShadow: 'none', background: 'var(--surface-2)' }}>
                 <span className="stat-label">Average allocation score</span>
                 <span className="stat-value" style={{ fontSize: 20 }}>
                   {s.averageAllocationScore}
                 </span>
               </div>
-              <div className="stat-card" style={{ border: 'none', boxShadow: 'none', background: '#f8fafc' }}>
+              <div className="stat-card" style={{ border: 'none', boxShadow: 'none', background: 'var(--surface-2)' }}>
                 <span className="stat-label">Peak day</span>
                 <span className="stat-value" style={{ fontSize: 20 }}>
                   {s.peakDay}

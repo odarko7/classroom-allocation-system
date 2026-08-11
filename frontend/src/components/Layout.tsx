@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { toggleTheme } from '../theme';
 import type { Role } from '../api/types';
 
 function NavIcon({ d }: { d: string }) {
@@ -72,6 +73,15 @@ export function Layout() {
               <span className="user-role">{user?.role.replace('_', ' ')}</span>
             </div>
             <span className="avatar" title={user?.name}>{user?.name?.trim().charAt(0).toUpperCase() ?? 'U'}</span>
+            <button className="theme-toggle" onClick={() => toggleTheme()} aria-label="Toggle dark mode" title="Toggle dark mode">
+              <svg className="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <svg className="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M4.93 19.07l1.41-1.41 M17.66 6.34l1.41-1.41" />
+              </svg>
+            </button>
             <button className="btn btn-ghost logout-btn" onClick={handleLogout}>
               Logout
             </button>
