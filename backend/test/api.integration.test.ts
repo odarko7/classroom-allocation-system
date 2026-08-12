@@ -138,11 +138,6 @@ test('pattern recognition returns patterns', async () => {
   assert.ok(res.json.patterns.length >= 3);
 });
 
-test('timetable returns rows', async () => {
-  const res = await call('GET', '/timetable');
-  assert.ok(res.json.rows.length > 0);
-});
-
 test('allocations can be listed and optimized', async () => {
   const active = await call('GET', '/semesters');
   const semesterId = active.json[0].id;

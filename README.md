@@ -13,9 +13,8 @@ detecting scheduling conflicts.
 - **Student Groups** – groups linked to courses, lecturers, and headcounts
 - **Allocations** – run the optimization algorithm, then approve/reject proposals
 - **Conflicts** – auto-detected scheduling conflicts with severity levels
-- **Timetable** – visual weekly grid filtered by semester/room/department
 - **Analytics** – utilization, building & department demand, peak periods
-- **Reports** – CSV exports (utilization, conflicts, timetables, and more)
+- **Reports** – CSV exports (utilization, conflicts, and more)
 - **Users & Roles** – `SUPER_ADMIN`, `ADMIN`, `HOD`, `LECTURER`, `VIEWER`
 - **Audit Logs** – full action history for admins
 
@@ -41,7 +40,7 @@ detecting scheduling conflicts.
 │       └── routes/     # API routes
 ├── frontend/       # React SPA (Vite)
 │   └── src/
-│       ├── pages/      # dashboard, classrooms, timetable, etc.
+│       ├── pages/      # dashboard, classrooms, allocations, etc.
 │       ├── components/ # layout, shared UI
 │       └── api/        # API client + auth context
 └── docs/           # project documentation / evidence
@@ -173,7 +172,7 @@ Base URL: `/api`
 - `GET/POST/PUT/DELETE` – `/classrooms`, `/courses`, `/lecturers`,
   `/student-groups`, `/users`, `/allocations`
 - `POST /api/allocations/optimize` – run the allocation algorithm
-- `GET /api/timetable`, `/api/conflicts`, `/api/reports`, `/api/audit-logs`
+- `GET /api/conflicts`, `/api/reports`, `/api/audit-logs`
 - `GET /api/analytics/*` – summary, utilization, buildings, departments,
   time-demand, capacity, conflict-rate
 - Supporting: `/semesters`, `/departments`, `/facilities`, `/dashboard`,

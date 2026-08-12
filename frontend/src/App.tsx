@@ -9,7 +9,6 @@ import CoursesPage from './pages/CoursesPage';
 import LecturersPage from './pages/LecturersPage';
 import AllocationsPage from './pages/AllocationsPage';
 import ConflictsPage from './pages/ConflictsPage';
-import TimetablePage from './pages/TimetablePage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
@@ -49,7 +48,6 @@ export default function App() {
         <Route path="/lecturers" element={<LecturersPage />} />
         <Route path="/allocations" element={<AllocationsPage />} />
         <Route path="/conflicts" element={<ConflictsPage />} />
-        <Route path="/timetable" element={<TimetablePage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/users" element={<UsersPage />} />

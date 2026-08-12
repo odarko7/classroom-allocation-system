@@ -21,7 +21,6 @@ import {
   summaryHandler, utilizationHandler, buildingsHandler, departmentsHandler, timeDemandHandler,
   capacityHandler, conflictRateHandler, patternsHandler, evaluationHandler, roomAnalyticsHandler,
 } from '../controllers/analyticsController.ts';
-import { timetableHandler, dailyTimetableHandler } from '../controllers/timetableController.ts';
 import {
   reportHandler, reportPreviewHandler, listReportNames, miscSummary,
   notificationsHandler, markNotificationsRead, auditLogsHandler,
@@ -115,10 +114,6 @@ router.post('/allocations/:id/reject', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'),
 router.delete('/allocations/:id', authorize('SUPER_ADMIN', 'ADMIN'), deleteAllocation);
 router.get('/conflicts', listConflicts);
 router.get('/validation', validateSemester);
-
-// ---- Timetable ----
-router.get('/timetable', timetableHandler);
-router.get('/timetable/daily', dailyTimetableHandler);
 
 // ---- Analytics ----
 router.get('/analytics/summary', summaryHandler);

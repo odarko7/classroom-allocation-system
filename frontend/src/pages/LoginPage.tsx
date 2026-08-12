@@ -121,7 +121,7 @@ export default function LoginPage() {
               ) : (
                 <>
                   <h2>Create your account</h2>
-                  <p className="login-sub">Join to view and share timetables.</p>
+                  <p className="login-sub">Join to view and manage room allocations.</p>
                 </>
               )}
             </div>

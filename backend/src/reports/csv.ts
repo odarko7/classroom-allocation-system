@@ -6,8 +6,6 @@ export type ReportName =
   | 'allocations'
   | 'conflicts'
   | 'departments'
-  | 'lecturer-timetable'
-  | 'course-timetable'
   | 'underutilized-rooms'
   | 'overutilized-rooms'
   | 'optimization';
@@ -86,44 +84,6 @@ export function generateReport(name: ReportName, semesterId: number | null): Csv
       name, filename: 'departments.csv',
       headers: ['Department', 'Faculty', 'Courses', 'Students'],
       rows: rows.map((r: any) => [r.department, r.faculty, r.courses, r.students]),
-    };
-  }
-
-  if (name === 'lecturer-timetable') {
-    const rows = all(`
-      SELECT l.name AS lecturer, co.course_code, g.name AS group_name, c.room_code, ts.day, ts.start_time, ts.end_time
-      FROM allocations a
-      JOIN lecturers l ON l.id = a.lecturer_id
-      JOIN courses co ON co.id = a.course_id
-      JOIN student_groups g ON g.id = a.group_id
-      JOIN classrooms c ON c.id = a.classroom_id
-      JOIN time_slots ts ON ts.id = a.time_slot_id
-      WHERE a.semester_id = ? AND a.status != 'REJECTED'
-      ORDER BY l.name, ts.day, ts.start_time
-    `, [semester]);
-    return {
-      name, filename: 'lecturer-timetable.csv',
-      headers: ['Lecturer', 'Course', 'Group', 'Room', 'Day', 'Start', 'End'],
-      rows: rows.map((r: any) => [r.lecturer, r.course_code, r.group_name, r.room_code, r.day, r.start_time, r.end_time]),
-    };
-  }
-
-  if (name === 'course-timetable') {
-    const rows = all(`
-      SELECT co.course_code, co.name AS course_name, g.name AS group_name, c.room_code, l.name AS lecturer, ts.day, ts.start_time, ts.end_time
-      FROM allocations a
-      JOIN courses co ON co.id = a.course_id
-      JOIN student_groups g ON g.id = a.group_id
-      JOIN classrooms c ON c.id = a.classroom_id
-      LEFT JOIN lecturers l ON l.id = a.lecturer_id
-      JOIN time_slots ts ON ts.id = a.time_slot_id
-      WHERE a.semester_id = ? AND a.status != 'REJECTED'
-      ORDER BY co.course_code, ts.day, ts.start_time
-    `, [semester]);
-    return {
-      name, filename: 'course-timetable.csv',
-      headers: ['Course', 'Course Name', 'Group', 'Room', 'Lecturer', 'Day', 'Start', 'End'],
-      rows: rows.map((r: any) => [r.course_code, r.course_name, r.group_name, r.room_code, r.lecturer, r.day, r.start_time, r.end_time]),
     };
   }
 

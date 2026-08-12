@@ -22,7 +22,7 @@ export function reportPreviewHandler(req: AuthenticatedRequest, res: Response): 
 }
 
 export function listReportNames(_req: AuthenticatedRequest, res: Response): void {
-  res.json(['classroom-utilization', 'allocations', 'conflicts', 'departments', 'lecturer-timetable', 'course-timetable', 'underutilized-rooms', 'overutilized-rooms', 'optimization']);
+  res.json(['classroom-utilization', 'allocations', 'conflicts', 'departments', 'underutilized-rooms', 'overutilized-rooms', 'optimization']);
 }
 
 export function miscSummary(req: AuthenticatedRequest, res: Response): void {

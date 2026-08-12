@@ -9,8 +9,6 @@ const REPORT_LABELS: Record<string, string> = {
   allocations: 'Allocations',
   conflicts: 'Conflicts',
   departments: 'Departments',
-  'lecturer-timetable': 'Lecturer Timetable',
-  'course-timetable': 'Course Timetable',
   'underutilized-rooms': 'Underutilized Rooms',
   'overutilized-rooms': 'Overutilized Rooms',
   optimization: 'Optimization Summary',

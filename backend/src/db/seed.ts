@@ -214,7 +214,7 @@ function populateUsage(semesterId: number): void {
   }
   const admin = get<{ id: number }>(`SELECT id FROM users WHERE email = 'admin@example.com'`);
   if (admin) {
-    insert(`INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'ALLOCATION_APPROVED', 'Seed timetable approved', 'The demonstration timetable has been generated and approved.')`, [admin.id]);
+    insert(`INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'ALLOCATION_APPROVED', 'Seed allocations approved', 'The demonstration allocations have been generated and approved.')`, [admin.id]);
   }
 }
 

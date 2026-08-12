@@ -158,20 +158,6 @@ export interface ValidationResult {
   unallocated: number;
 }
 
-export interface TimetableCell {
-  day: number;
-  startTime: string;
-  endTime: string;
-  allocationId: number;
-  courseCode: string;
-  courseName: string;
-  groupName: string;
-  roomCode: string;
-  lecturerName: string | null;
-  status: string;
-  score: number | null;
-}
-
 export interface DashboardCounts {
   semester: number | null;
   counts: Record<string, number>;
