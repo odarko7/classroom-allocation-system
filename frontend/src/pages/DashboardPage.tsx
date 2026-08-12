@@ -50,13 +50,13 @@ export default function DashboardPage() {
 
   const firstName = user?.name?.trim().split(/\s+/)[0] ?? 'there';
 
-  const statCards: { label: string; value: string; sub?: string }[] = s
+  const statCards: { label: string; value: string; sub?: string; to: string }[] = s
     ? [
-        { label: 'Classrooms', value: String(s.totalClassrooms), sub: `${s.availableClassrooms} active` },
-        { label: 'Courses', value: String(s.totalCourses) },
-        { label: 'Lecturers', value: String(s.totalLecturers) },
-        { label: 'Allocations', value: String(s.totalAllocations), sub: `${s.approvedAllocations} approved · ${s.proposedAllocations} proposed` },
-        { label: 'Conflicts', value: String(s.conflicts) },
+        { label: 'Classrooms', value: String(s.totalClassrooms), sub: `${s.availableClassrooms} active`, to: '/classrooms' },
+        { label: 'Courses', value: String(s.totalCourses), to: '/courses' },
+        { label: 'Lecturers', value: String(s.totalLecturers), to: '/lecturers' },
+        { label: 'Allocations', value: String(s.totalAllocations), sub: `${s.approvedAllocations} approved · ${s.proposedAllocations} proposed`, to: '/allocations' },
+        { label: 'Conflicts', value: String(s.conflicts), to: '/conflicts' },
       ]
     : [];
 
@@ -89,11 +89,11 @@ export default function DashboardPage() {
       <ErrorBanner message={error} />
       <div className="grid grid-4">
         {statCards.map((c) => (
-          <div className="stat-card" key={c.label}>
+          <Link key={c.label} to={c.to} className="stat-card stat-card-link">
             <span className="stat-label">{c.label}</span>
             <span className="stat-value">{c.value}</span>
             {c.sub && <span className="stat-sub">{c.sub}</span>}
-          </div>
+          </Link>
         ))}
       </div>
 

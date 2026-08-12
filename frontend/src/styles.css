@@ -582,6 +582,12 @@ button {
   opacity: 1;
 }
 
+.stat-card-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .stat-label {
   font-size: 12px;
   color: var(--muted);
@@ -873,6 +879,12 @@ button {
   background: var(--surface-2);
   color: var(--text);
   transform: none;
+}
+
+.logout-btn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .icon-btn {
