@@ -659,6 +659,65 @@ button {
   margin-left: 6px;
 }
 
+.timetable-table th {
+  text-align: center;
+}
+
+.timetable-time-col,
+.timetable-time-cell {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.timetable-time-cell strong {
+  display: block;
+  font-size: 12px;
+}
+
+.timetable-time-cell span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.timetable-cell {
+  min-width: 160px;
+  vertical-align: top !important;
+}
+
+.timetable-empty {
+  color: var(--border);
+  display: block;
+  text-align: center;
+  padding: 6px 0;
+}
+
+.timetable-entry {
+  padding: 8px 10px;
+  margin: 2px 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid #3f51b5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.timetable-entry strong {
+  display: block;
+}
+
+.timetable-entry span {
+  display: block;
+  color: var(--muted);
+}
+
+.timetable-entry .timetable-room {
+  color: #3f51b5;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}
+
 .empty {
   padding: 40px 24px;
   text-align: center;

@@ -13,7 +13,7 @@ import {
   listGroups,
 } from '../controllers/managementController.ts';
 import {
-  listAllocations, getAllocation, runOptimization, proposeAllocation, approveAllocation,
+  listAllocations, getAllocation, getTimetable, runOptimization, proposeAllocation, approveAllocation,
   rejectAllocation, deleteAllocation, listConflicts, validateSemester, listStudentGroups, createGroup,
   createAllocation, recommendAllocation, confirmRecommendation,
 } from '../controllers/allocationController.ts';
@@ -108,6 +108,7 @@ router.get('/student-groups', listStudentGroups);
 router.post('/student-groups', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), createGroup);
 
 // ---- Allocations & engine ----
+router.get('/timetable', getTimetable);
 router.get('/allocations', listAllocations);
 router.get('/allocations/:id', getAllocation);
 router.post('/allocations', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), createAllocation);

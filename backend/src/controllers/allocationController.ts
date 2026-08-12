@@ -50,6 +50,32 @@ export function getAllocation(req: AuthenticatedRequest, res: Response): void {
   res.json({ ...allocation, score });
 }
 
+export function getTimetable(req: AuthenticatedRequest, res: Response): void {
+  const { semester } = req.query as Record<string, string>;
+  let sem = semester
+    ? get<{ id: number; name: string; status: string }>(`SELECT id, name, status FROM semesters WHERE id = ?`, [Number(semester)])
+    : get<{ id: number; name: string; status: string }>(`SELECT id, name, status FROM semesters WHERE status = 'ACTIVE' ORDER BY id DESC LIMIT 1`);
+  if (!sem) throw new ApiError(404, 'No semester found.');
+  const semesterId = sem.id;
+
+  const allocations = all(`
+    SELECT a.id, a.course_id, a.group_id, a.classroom_id, a.time_slot_id, a.semester_id, a.status,
+      c.room_code, c.building, co.course_code, co.name AS course_name, g.name AS group_name,
+      l.name AS lecturer_name, ts.day AS slot_day, ts.start_time AS slot_start, ts.end_time AS slot_end, ts.period_name
+    FROM allocations a
+    JOIN classrooms c ON c.id = a.classroom_id
+    JOIN courses co ON co.id = a.course_id
+    JOIN student_groups g ON g.id = a.group_id
+    LEFT JOIN lecturers l ON l.id = a.lecturer_id
+    JOIN time_slots ts ON ts.id = a.time_slot_id
+    WHERE a.semester_id = ? AND a.status = 'APPROVED' AND ts.day BETWEEN 0 AND 4
+    ORDER BY ts.day, ts.start_time, c.room_code`, [semesterId]);
+
+  const timeSlots = all(`SELECT id, day, start_time, end_time, period_name FROM time_slots WHERE day BETWEEN 0 AND 4 ORDER BY start_time, day`);
+
+  res.json({ semester: sem, allocations, timeSlots });
+}
+
 export function runOptimization(req: AuthenticatedRequest, res: Response): void {
   const { semesterId } = req.body;
   if (!semesterId) throw new ApiError(422, 'semesterId is required.');

@@ -230,6 +230,32 @@ export interface ConfirmRecommendationResponse {
   allocation: Allocation;
 }
 
+export interface TimetableAllocation {
+  id: number;
+  course_id: number;
+  group_id: number;
+  classroom_id: number;
+  time_slot_id: number;
+  semester_id: number;
+  status: AllocationStatus;
+  room_code: string;
+  building: string;
+  course_code: string;
+  course_name: string;
+  group_name: string;
+  lecturer_name: string | null;
+  slot_day: number;
+  slot_start: string;
+  slot_end: string;
+  period_name: string | null;
+}
+
+export interface TimetableResponse {
+  semester: Semester;
+  allocations: TimetableAllocation[];
+  timeSlots: TimeSlot[];
+}
+
 export interface DashboardCounts {
   semester: number | null;
   counts: Record<string, number>;

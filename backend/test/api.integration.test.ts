@@ -138,6 +138,22 @@ test('pattern recognition returns patterns', async () => {
   assert.ok(res.json.patterns.length >= 3);
 });
 
+test('timetable returns approved Mon-Fri schedule', async () => {
+  const res = await call('GET', '/timetable');
+  assert.equal(res.status, 200, JSON.stringify(res.json));
+  assert.ok(res.json.semester && res.json.semester.id, 'semester missing');
+  assert.ok(Array.isArray(res.json.allocations), 'allocations missing');
+  assert.ok(Array.isArray(res.json.timeSlots), 'timeSlots missing');
+  assert.ok(res.json.timeSlots.length >= 5, 'expected time slots for the week');
+  for (const a of res.json.allocations) {
+    assert.equal(a.status, 'APPROVED', 'timetable must only include approved allocations');
+    assert.ok(a.slot_day >= 0 && a.slot_day <= 4, 'timetable must only include Monday-Friday');
+  }
+  const semesterId = res.json.semester.id;
+  const semesterTimeTable = await call('GET', `/timetable?semester=${semesterId}`);
+  assert.equal(semesterTimeTable.status, 200);
+});
+
 test('allocations can be listed and optimized', async () => {
   const active = await call('GET', '/semesters');
   const semesterId = active.json[0].id;
