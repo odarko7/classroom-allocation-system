@@ -234,12 +234,33 @@ export function deleteAllocation(req: AuthenticatedRequest, res: Response): void
   res.json({ message: 'Allocation deleted.' });
 }
 
+function normalizeDetectedConflicts(conflicts: { allocationId: number; type: string; description: string; severity: string }[], semesterId: number) {
+  const allocs = new Map(allocationRepo.findBySemester(semesterId).map((a) => [a.id, a]));
+  return conflicts.map((c, i) => {
+    const a = allocs.get(c.allocationId);
+    return {
+      id: -(i + 1),
+      allocation_id: c.allocationId,
+      conflict_type: c.type,
+      description: c.description,
+      severity: c.severity,
+      resolved: 0,
+      allocation_status: a?.status ?? null,
+      room_code: a?.room_code ?? null,
+      course_code: a?.course_code ?? null,
+      slot_day: a?.slot_day ?? null,
+      start_time: a?.slot_start ?? null,
+    };
+  });
+}
+
 export function listConflicts(req: AuthenticatedRequest, res: Response): void {
   const { semester } = req.query as Record<string, string>;
   if (semester) {
+    const semesterId = Number(semester);
     const engine = new AllocationEngine();
-    const conflicts = engine.detectConflicts(allocationRepo.findExisting(Number(semester)), Number(semester));
-    res.json(conflicts);
+    const conflicts = engine.detectConflicts(allocationRepo.findExisting(semesterId), semesterId);
+    res.json(normalizeDetectedConflicts(conflicts, semesterId));
     return;
   }
   res.json(allocationRepo.conflicts());
