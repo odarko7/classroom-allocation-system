@@ -34,6 +34,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<LoginPage />} />
       <Route
         element={
           <RequireAuth>

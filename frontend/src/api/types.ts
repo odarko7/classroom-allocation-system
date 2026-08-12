@@ -10,6 +10,25 @@ export interface LoginResponse {
   user: { id: number; name: string; email: string; role: Role; departmentId: number | null };
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  token?: string;
+  email?: string;
+  expiresInMinutes: number;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export interface AdminResetTokenResponse {
+  token: string;
+  email: string;
+  name: string;
+  expiresInMinutes: number;
+  emailed: boolean;
+}
+
 export interface Paginated<T> {
   rows: T[];
   total: number;

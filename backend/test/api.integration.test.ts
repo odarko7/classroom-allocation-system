@@ -301,3 +301,64 @@ test('logout works', async () => {
   const res = await call('POST', '/auth/logout');
   assert.equal(res.status, 200);
 });
+
+test('forgot password returns generic message for unknown email', async () => {
+  const res = await call('POST', '/auth/forgot-password', { email: 'nobody@example.com' });
+  assert.equal(res.status, 200);
+  assert.ok(res.json.message);
+  assert.equal(res.json.token, undefined);
+});
+
+test('forgot password generates token when email is not configured', async () => {
+  const res = await call('POST', '/auth/forgot-password', { email: 'admin@example.com' });
+  assert.equal(res.status, 200);
+  assert.ok(res.json.token, 'expected a plain reset token (no SMTP in tests)');
+  assert.equal(res.json.email, 'admin@example.com');
+});
+
+test('reset password with valid token updates password', async () => {
+  const req = await call('POST', '/auth/forgot-password', { email: 'admin@example.com' });
+  const reset = await call('POST', '/auth/reset-password', {
+    email: 'admin@example.com',
+    token: req.json.token,
+    password: 'NewPass123',
+  });
+  assert.equal(reset.status, 200);
+  assert.ok(reset.json.message);
+
+  const oldLogin = await call('POST', '/auth/login', { email: 'admin@example.com', password: 'Admin@123' }, 401);
+  assert.equal(oldLogin.status, 401);
+  const newLogin = await call('POST', '/auth/login', { email: 'admin@example.com', password: 'NewPass123' });
+  assert.ok(newLogin.json.token);
+
+  token = newLogin.json.token;
+});
+
+test('reset password rejects an invalid token', async () => {
+  const res = await call('POST', '/auth/reset-password', {
+    email: 'admin@example.com',
+    token: 'totally-wrong-token',
+    password: 'Whatever123',
+  });
+  assert.equal(res.status, 400);
+  assert.ok(res.json.error);
+});
+
+test('reset token is single use', async () => {
+  const req = await call('POST', '/auth/forgot-password', { email: 'admin@example.com' });
+  const first = await call('POST', '/auth/reset-password', { email: 'admin@example.com', token: req.json.token, password: 'Another123' });
+  assert.equal(first.status, 200);
+  const second = await call('POST', '/auth/reset-password', { email: 'admin@example.com', token: req.json.token, password: 'Third123' });
+  assert.equal(second.status, 400);
+});
+
+test('admin can generate a reset token for a user', async () => {
+  const created = await call('POST', '/users', { name: 'Reset User', email: 'resetuser@example.com', password: 'OldPass123', role: 'VIEWER' }, 201);
+  const res = await call('POST', `/users/${created.json.id}/reset-token`);
+  assert.equal(res.status, 201);
+  assert.ok(res.json.token);
+  assert.equal(res.json.email, 'resetuser@example.com');
+
+  const reset = await call('POST', '/auth/reset-password', { email: 'resetuser@example.com', token: res.json.token, password: 'FreshPass123' });
+  assert.equal(reset.status, 200);
+});

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../api/client';
 import { useAsync } from '../api/useAsync';
-import type { Department, Role, User } from '../api/types';
+import type { AdminResetTokenResponse, Department, Role, User } from '../api/types';
 import { Badge, ErrorBanner, Field, Modal, Spinner, SuccessBanner, Table } from '../components/Shared';
 
 const ROLES: Role[] = ['SUPER_ADMIN', 'ADMIN', 'HOD', 'LECTURER', 'VIEWER'];
@@ -16,6 +16,11 @@ export default function UsersPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSaving, setFormSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [resetUser, setResetUser] = useState<User | null>(null);
+  const [resetResult, setResetResult] = useState<AdminResetTokenResponse | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const set = (key: keyof typeof emptyForm, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -42,6 +47,33 @@ export default function UsersPage() {
     }
   };
 
+  const openResetModal = (user: User) => {
+    setResetUser(user);
+    setResetResult(null);
+    setResetError(null);
+  };
+
+  const generateResetToken = async () => {
+    if (!resetUser) return;
+    setResetLoading(true);
+    setResetError(null);
+    setResetResult(null);
+    try {
+      const res = await api.post<AdminResetTokenResponse>(`/users/${resetUser.id}/reset-token`);
+      setResetResult(res);
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : 'Failed to generate reset token.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const copyToken = () => {
+    if (!resetResult) return;
+    navigator.clipboard.writeText(resetResult.token).catch(() => undefined);
+    setSuccess('Reset token copied to clipboard.');
+  };
+
   return (
     <div>
       <div className="flex-between">
@@ -65,6 +97,11 @@ export default function UsersPage() {
             { key: 'isActive', header: 'Status', render: (r) => (r.isActive ? <Badge tone="success">Active</Badge> : <Badge tone="danger">Inactive</Badge>) },
           ]}
           rows={data ?? []}
+          actions={(r) => (
+            <button type="button" className="btn btn-sm" onClick={() => openResetModal(r)}>
+              Reset password
+            </button>
+          )}
         />
       )}
 
@@ -111,6 +148,39 @@ export default function UsersPage() {
           </form>
         </Modal>
       )}
+
+      {resetUser && (
+        <Modal title={`Reset password — ${resetUser.name}`} onClose={() => setResetUser(null)}>
+          <p className="modal-text">
+            Generate a one-time reset token for <strong>{resetUser.email}</strong>. The token expires after 60 minutes and can be used once from the login page.
+          </p>
+          {resetError && <ErrorBanner message={resetError} />}
+          {!resetResult ? (
+            <div className="form-actions">
+              <button type="button" className="btn" onClick={() => setResetUser(null)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={generateResetToken} disabled={resetLoading}>
+                {resetLoading ? 'Generating...' : 'Generate reset token'}
+              </button>
+            </div>
+          ) : (
+            <div className="reset-token-block">
+              <span className="field-label">One-time reset token</span>
+              <div className="reset-token-value">
+                <code>{resetResult.token}</code>
+                <button type="button" className="btn btn-sm" onClick={copyToken}>
+                  Copy
+                </button>
+              </div>
+              <p className="modal-text">
+                Share this token with the user. They can use it at the login page via “Forgot password?” → “Reset password”.{resetResult.emailed ? ' A reset link was also emailed to them.' : ''}
+              </p>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
+

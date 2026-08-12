@@ -9,16 +9,16 @@ import {
 import { runMigrations } from './migrations.ts';
 import { isMain } from '../utils/isMain.ts';
 
-function deptIdByCode(code: string): number | undefined {
-  return get<{ id: number }>(`SELECT id FROM departments WHERE code = ?`, [code])?.id;
+function deptIdByCode(code: string): number | null {
+  return get<{ id: number }>(`SELECT id FROM departments WHERE code = ?`, [code])?.id ?? null;
 }
 
-function lecturerIdByName(name: string): number | undefined {
-  return get<{ id: number }>(`SELECT id FROM lecturers WHERE name = ?`, [name])?.id;
+function lecturerIdByName(name: string): number | null {
+  return get<{ id: number }>(`SELECT id FROM lecturers WHERE name = ?`, [name])?.id ?? null;
 }
 
-function facilityIdByName(name: string): number | undefined {
-  return get<{ id: number }>(`SELECT id FROM facilities WHERE name = ?`, [name])?.id;
+function facilityIdByName(name: string): number | null {
+  return get<{ id: number }>(`SELECT id FROM facilities WHERE name = ?`, [name])?.id ?? null;
 }
 
 export function seedDatabase(opts?: { force?: boolean }): { message: string; counts: Record<string, number> } {

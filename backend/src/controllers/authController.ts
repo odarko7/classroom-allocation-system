@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { login, me, logout, register } from '../services/authService.ts';
+import { login, me, logout, register, requestPasswordReset, resetPassword, generateAdminResetToken } from '../services/authService.ts';
 import { userRepo } from '../repositories/userRepo.ts';
 import { hashPassword } from '../security/password.ts';
 import { writeAuditLog } from '../services/notificationService.ts';
@@ -14,6 +14,26 @@ export function loginHandler(req: Request, res: Response): void {
 export function registerHandler(req: Request, res: Response): void {
   const { name, email, password } = req.body;
   const result = register(name, email, password);
+  res.status(201).json(result);
+}
+
+export function forgotPasswordHandler(req: Request, res: Response): void {
+  const { email } = req.body;
+  res.json(requestPasswordReset(email));
+}
+
+export function resetPasswordHandler(req: Request, res: Response): void {
+  const { email, token, password } = req.body;
+  res.json(resetPassword(email, token, password));
+}
+
+export function adminResetTokenHandler(req: AuthenticatedRequest, res: Response): void {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId)) {
+    res.status(422).json({ error: 'Invalid user id.' });
+    return;
+  }
+  const result = generateAdminResetToken(userId);
   res.status(201).json(result);
 }
 

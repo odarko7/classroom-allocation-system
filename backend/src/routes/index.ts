@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { classroomRepo } from '../repositories/classroomRepo.ts';
-import { loginHandler, registerHandler, meHandler, logoutHandler, listUsersHandler, createUserHandler } from '../controllers/authController.ts';
+import { loginHandler, registerHandler, meHandler, logoutHandler, listUsersHandler, createUserHandler, forgotPasswordHandler, resetPasswordHandler, adminResetTokenHandler } from '../controllers/authController.ts';
 import {
   listClassrooms, getClassroom, createClassroom, updateClassroom, deleteClassroom,
   listCourses, getCourse, createCourse, updateCourse, deleteCourse,
@@ -34,6 +34,8 @@ const router = Router();
 // ---- Public auth ----
 router.post('/auth/login', validateBody(z.object({ email: z.string().email(), password: z.string().min(1) })), loginHandler);
 router.post('/auth/register', validateBody(z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) })), registerHandler);
+router.post('/auth/forgot-password', validateBody(z.object({ email: z.string().email() })), forgotPasswordHandler);
+router.post('/auth/reset-password', validateBody(z.object({ email: z.string().email(), token: z.string().min(1), password: z.string().min(6) })), resetPasswordHandler);
 
 // ---- Everything else requires authentication ----
 router.use(authenticate);
@@ -44,6 +46,7 @@ router.post('/auth/logout', logoutHandler);
 // ---- Users (admin only) ----
 router.get('/users', authorize('SUPER_ADMIN', 'ADMIN'), listUsersHandler);
 router.post('/users', authorize('SUPER_ADMIN'), validateBody(z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6), role: z.enum(['SUPER_ADMIN', 'ADMIN', 'HOD', 'LECTURER', 'VIEWER']), departmentId: z.number().nullable().optional() })), createUserHandler);
+router.post('/users/:id/reset-token', authorize('SUPER_ADMIN', 'ADMIN'), adminResetTokenHandler);
 
 // ---- Classrooms ----
 router.get('/classrooms', listClassrooms);

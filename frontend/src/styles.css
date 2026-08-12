@@ -967,6 +967,36 @@ button {
   padding: 20px;
 }
 
+.modal-text {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.reset-token-block {
+  margin-top: 4px;
+}
+
+.reset-token-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.reset-token-value code {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--primary);
+  word-break: break-all;
+}
+
 /* ---------- Banners / spinner ---------- */
 .banner {
   padding: 10px 14px;
@@ -1342,6 +1372,39 @@ button {
   text-align: center;
   font-size: 12px;
   color: var(--muted);
+}
+
+.auth-tabs-single {
+  display: inline-flex;
+  width: auto;
+  margin-bottom: 20px;
+}
+
+.auth-tabs-single .auth-tab {
+  flex: none;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -10px;
+  margin-bottom: 14px;
+}
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
 }
 
 .input-wrap {

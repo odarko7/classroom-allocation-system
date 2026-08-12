@@ -47,4 +47,5 @@ export interface AllocationScoreRow {
 }
 export interface ConflictRow { id: number; allocation_id: number; conflict_type: string; description: string; severity: Severity; resolved: number; }
 export interface NotificationRow { id: number; user_id: number | null; role: string | null; type: string; title: string; message: string | null; is_read: number; }
+export interface PasswordResetRow { id: number; user_id: number; token_hash: string; expires_at: string; used_at: string | null; created_at: string; }
 export interface AuditLogRow { id: number; user_id: number | null; username: string | null; action: string; entity_type: string | null; entity_id: number | null; old_value: string | null; new_value: string | null; }

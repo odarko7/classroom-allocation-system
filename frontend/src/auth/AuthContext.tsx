@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { api, getStoredUser, getToken, setStoredUser, setToken } from '../api/client';
-import type { LoginResponse, Role } from '../api/types';
+import type { ForgotPasswordResponse, LoginResponse, ResetPasswordResponse, Role } from '../api/types';
 
 interface AuthUser {
   id: number;
@@ -15,6 +15,8 @@ interface AuthContextValue {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
+  resetPassword: (email: string, token: string, password: string) => Promise<ResetPasswordResponse>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
 }
@@ -45,6 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user);
   };
 
+  const forgotPassword = (email: string) => api.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+
+  const resetPassword = (email: string, token: string, password: string) =>
+    api.post<ResetPasswordResponse>('/auth/reset-password', { email, token, password });
+
   const logout = () => {
     api.post('/auth/logout').catch(() => undefined);
     setToken(null);
@@ -55,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (...roles: Role[]) => (user ? roles.includes(user.role) : false);
 
-  const value = useMemo(() => ({ user, token, login, register, logout, hasRole }), [user, token, login, register, logout, hasRole]);
+  const value = useMemo(() => ({ user, token, login, register, forgotPassword, resetPassword, logout, hasRole }), [user, token, login, register, forgotPassword, resetPassword, logout, hasRole]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
