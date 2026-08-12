@@ -14,10 +14,11 @@ import { paginate } from '../utils/db.ts';
 
 export function listAllocations(req: AuthenticatedRequest, res: Response): void {
   const { semester, status, department, room, course, page = 1, pageSize = 20 } = req.query as Record<string, string>;
+  const effectiveStatus = req.user?.role === 'VIEWER' ? 'APPROVED' : status;
   const conditions: string[] = [];
   const params: unknown[] = [];
   if (semester) { conditions.push(`a.semester_id = ?`); params.push(Number(semester)); }
-  if (status) { conditions.push(`a.status = ?`); params.push(status); }
+  if (effectiveStatus) { conditions.push(`a.status = ?`); params.push(effectiveStatus); }
   if (department) { conditions.push(`co.department_id = ?`); params.push(Number(department)); }
   if (room) { conditions.push(`c.room_code LIKE ?`); params.push(`%${room}%`); }
   if (course) { conditions.push(`(co.course_code LIKE ? OR co.name LIKE ?)`); params.push(`%${course}%`, `%${course}%`); }

@@ -23,9 +23,10 @@ interface SetupForm {
 export default function AllocationsPage() {
   const { hasRole } = useAuth();
   const canAct = hasRole('SUPER_ADMIN', 'ADMIN', 'HOD');
+  const isViewer = hasRole('VIEWER');
 
   const [semester, setSemester] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(isViewer ? 'APPROVED' : '');
   const [department, setDepartment] = useState('');
   const [course, setCourse] = useState('');
   const [page, setPage] = useState(1);
@@ -326,7 +327,7 @@ export default function AllocationsPage() {
               </option>
             ))}
           </select>
-          <select className="select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+          <select className="select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} disabled={isViewer}>
             <option value="">All statuses</option>
             <option>APPROVED</option>
             <option>PROPOSED</option>
