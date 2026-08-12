@@ -30,6 +30,10 @@ export function listClassrooms(req: AuthenticatedRequest, res: Response): void {
   res.json({ ...result, rows: result.rows.map((r: any) => ({ ...r, facilities: r.facilities ? String(r.facilities).split('|') : [] })) });
 }
 
+export function listBuildings(_req: AuthenticatedRequest, res: Response): void {
+  res.json(classroomRepo.listBuildings());
+}
+
 export function getClassroom(req: AuthenticatedRequest, res: Response): void {
   const room = classroomRepo.findById(Number(req.params.id));
   if (!room) throw new ApiError(404, 'Classroom not found.');

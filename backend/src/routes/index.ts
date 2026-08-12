@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { classroomRepo } from '../repositories/classroomRepo.ts';
 import { loginHandler, registerHandler, meHandler, logoutHandler, listUsersHandler, createUserHandler, forgotPasswordHandler, resetPasswordHandler, adminResetTokenHandler } from '../controllers/authController.ts';
 import {
-  listClassrooms, getClassroom, createClassroom, updateClassroom, deleteClassroom,
+  listClassrooms, getClassroom, createClassroom, updateClassroom, deleteClassroom, listBuildings,
   listCourses, getCourse, createCourse, updateCourse, deleteCourse,
   listLecturers, getLecturer, createLecturer, updateLecturer, deleteLecturer,
   listDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment,
@@ -50,6 +50,7 @@ router.post('/users/:id/reset-token', authorize('SUPER_ADMIN', 'ADMIN'), adminRe
 
 // ---- Classrooms ----
 router.get('/classrooms', listClassrooms);
+router.get('/buildings', listBuildings);
 router.get('/classrooms/options', (req, res) => {
   const rows = classroomRepo.list().map((c) => ({ id: c.id, roomCode: c.room_code, building: c.building, capacity: c.capacity, roomType: c.room_type }));
   res.json(rows);

@@ -7,12 +7,11 @@ import { useAuth } from '../auth/AuthContext';
 
 const ROOM_TYPES: RoomType[] = ['Lecture Hall', 'Laboratory', 'Computer Lab', 'Seminar Room', 'Examination Hall', 'Conference Room', 'Studio'];
 const STATUSES = ['ACTIVE', 'MAINTENANCE', 'INACTIVE'];
-const BUILDINGS = ['Main Campus', 'Engineering', 'Science', 'Business', 'Medical'];
 
 const emptyForm = {
   roomCode: '',
   name: '',
-  building: 'Main Campus',
+  building: '',
   floor: 1,
   capacity: 50,
   roomType: 'Lecture Hall' as RoomType,
@@ -44,6 +43,8 @@ export default function ClassroomsPage() {
 
   const { data, loading, error, reload } = useAsync<Paginated<Classroom>>(() => api.get(`/classrooms?${query}`), [query]);
   const facilitiesData = useAsync<Facility[]>(() => api.get('/facilities'));
+  const buildingsData = useAsync<string[]>(() => api.get('/buildings'));
+  const buildings = buildingsData.data ?? [];
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Classroom | null>(null);
@@ -54,7 +55,7 @@ export default function ClassroomsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, building: buildings[0] ?? '' });
     setFormError(null);
     setShowModal(true);
   };
@@ -143,7 +144,7 @@ export default function ClassroomsPage() {
           <input className="input" placeholder="Search code / building..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
           <select className="select" value={building} onChange={(e) => { setBuilding(e.target.value); setPage(1); }}>
             <option value="">All buildings</option>
-            {BUILDINGS.map((b) => (
+            {buildings.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>
@@ -222,7 +223,7 @@ export default function ClassroomsPage() {
               </Field>
               <Field label="Building">
                 <select className="select" value={form.building} onChange={(e) => set('building', e.target.value)}>
-                  {BUILDINGS.map((b) => (
+                  {buildings.map((b) => (
                     <option key={b}>{b}</option>
                   ))}
                 </select>

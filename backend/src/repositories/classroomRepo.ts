@@ -68,4 +68,7 @@ export const classroomRepo = {
   countByStatus() {
     return all<{ status: string; c: number }>(`SELECT status, COUNT(*) AS c FROM classrooms GROUP BY status`);
   },
+  listBuildings() {
+    return all<{ building: string }>(`SELECT DISTINCT building FROM classrooms ORDER BY building`).map((r) => r.building);
+  },
 };
