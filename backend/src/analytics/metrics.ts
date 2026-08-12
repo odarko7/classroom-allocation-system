@@ -156,11 +156,14 @@ export function capacityEfficiency(semesterId: number): number {
   return count ? Math.round((sum / count) * 1000) / 10 : 0;
 }
 
+export function conflictCount(semesterId: number): number {
+  return new AllocationEngine().detectConflicts(allocationsOf(semesterId), semesterId).length;
+}
+
 export function conflictRate(semesterId: number): number {
   const allocs = allocationRepo.countBySemester(semesterId);
   if (allocs === 0) return 0;
-  const engine = new AllocationEngine();
-  const conflicts = engine.detectConflicts(allocationsOf(semesterId), semesterId).length;
+  const conflicts = conflictCount(semesterId);
   return Math.round((conflicts / allocs) * 1000) / 10;
 }
 

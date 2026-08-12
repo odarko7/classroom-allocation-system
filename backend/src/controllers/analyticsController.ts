@@ -1,8 +1,7 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.ts';
-import { analyticsSummary, buildingUtilization, capacityEfficiency, classroomUsage, conflictRate, departmentDemand, peakPeriods, timeDemand } from '../analytics/metrics.ts';
+import { analyticsSummary, buildingUtilization, capacityEfficiency, classroomUsage, conflictCount, conflictRate, departmentDemand, peakPeriods, timeDemand } from '../analytics/metrics.ts';
 import { recognizePatterns } from '../analytics/patterns.ts';
-import { allocationRepo } from '../repositories/allocationRepo.ts';
 import { all, get } from '../utils/db.ts';
 import { runEvaluation } from '../algorithm/evaluation.ts';
 
@@ -46,7 +45,7 @@ export function capacityHandler(req: AuthenticatedRequest, res: Response): void 
 
 export function conflictRateHandler(req: AuthenticatedRequest, res: Response): void {
   const semester = semesterParam(req) ?? (get<{ id: number }>(`SELECT id FROM semesters WHERE status = 'ACTIVE'`)?.id ?? null);
-  res.json({ semester, conflictRate: semester ? conflictRate(semester) : 0, conflicts: semester ? allocationRepo.conflicts().length : 0 });
+  res.json({ semester, conflictRate: semester ? conflictRate(semester) : 0, conflicts: semester ? conflictCount(semester) : 0 });
 }
 
 export function patternsHandler(req: AuthenticatedRequest, res: Response): void {
