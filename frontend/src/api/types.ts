@@ -338,6 +338,12 @@ export interface NotificationItem {
   title: string;
   message: string | null;
   is_read: number;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  rows: NotificationItem[];
+  unread: number;
 }
 
 export interface ReportInfo {

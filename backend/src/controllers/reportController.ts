@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { AuthenticatedRequest } from '../middleware/auth.ts';
+import { ApiError, type AuthenticatedRequest } from '../middleware/auth.ts';
 import { generateReport, reportToCsv, type ReportName } from '../reports/csv.ts';
 import { all, get, run } from '../utils/db.ts';
 import { writeAuditLog } from '../services/notificationService.ts';
@@ -47,13 +47,38 @@ export function miscSummary(req: AuthenticatedRequest, res: Response): void {
   res.json({ semester, counts });
 }
 
+function notificationScope(req: AuthenticatedRequest): { where: string; params: unknown[] } {
+  return {
+    where: `(user_id IS NULL OR user_id = ?)`,
+    params: [req.user!.id],
+  };
+}
+
 export function notificationsHandler(req: AuthenticatedRequest, res: Response): void {
-  const rows = all(`SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50`);
-  const unread = get<{ c: number }>(`SELECT COUNT(*) AS c FROM notifications WHERE is_read = 0`)?.c ?? 0;
+  const scope = notificationScope(req);
+  const rows = all(`SELECT * FROM notifications WHERE ${scope.where} ORDER BY is_read ASC, created_at DESC LIMIT 50`, scope.params);
+  const unread = get<{ c: number }>(`SELECT COUNT(*) AS c FROM notifications WHERE ${scope.where} AND is_read = 0`, scope.params)?.c ?? 0;
   res.json({ rows, unread });
 }
 
 export function markNotificationsRead(req: AuthenticatedRequest, res: Response): void {
-  run(`UPDATE notifications SET is_read = 1`);
+  const scope = notificationScope(req);
+  run(`UPDATE notifications SET is_read = 1 WHERE ${scope.where}`, scope.params);
   res.json({ message: 'Notifications marked as read.' });
+}
+
+export function deleteNotification(req: AuthenticatedRequest, res: Response): void {
+  const id = Number(req.params.id);
+  const exists = get<{ id: number }>(
+    `SELECT id FROM notifications WHERE id = ? AND (user_id IS NULL OR user_id = ?)`,
+    [id, req.user!.id],
+  );
+  if (!exists) throw new ApiError(404, 'Notification not found.');
+  run(`DELETE FROM notifications WHERE id = ?`, [id]);
+  res.json({ message: 'Notification deleted.' });
+}
+
+export function clearNotifications(req: AuthenticatedRequest, res: Response): void {
+  run(`DELETE FROM notifications WHERE user_id = ? OR user_id IS NULL`, [req.user!.id]);
+  res.json({ message: 'All notifications cleared.' });
 }

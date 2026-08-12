@@ -85,6 +85,9 @@ export function runOptimization(req: AuthenticatedRequest, res: Response): void 
   try {
     const result = optimizeAllocations(semesterId, req.user!.id);
     notify({ userId: req.user!.id, type: 'ALLOCATION_PROPOSED', title: 'Optimization completed', message: result.message });
+    if (result.after.conflicts > 0) {
+      notify({ userId: req.user!.id, type: 'CONFLICT', title: 'Conflicts detected', message: `${result.after.conflicts} scheduling conflict(s) found after optimization. Review the Conflicts page.` });
+    }
     res.json({ ...result, semesterId });
   } catch (err) {
     notify({ userId: req.user!.id, type: 'OPTIMIZATION_FAILED', title: 'Optimization failed', message: String(err) });
@@ -204,6 +207,9 @@ export function confirmRecommendation(req: AuthenticatedRequest, res: Response):
   const engine = new AllocationEngine();
   const conflicts = engine.detectConflicts(allocationRepo.findExisting(sid), sid).filter((c) => c.allocationId === allocId);
   for (const c of conflicts) allocationRepo.addConflict(allocId, c.type, c.description, c.severity);
+  if (conflicts.length > 0) {
+    notify({ userId: req.user!.id, type: 'CONFLICT', title: 'Conflict detected', message: `${conflicts[0].description} (${conflicts[0].type}).` });
+  }
 
   writeAuditLog({ userId: req.user!.id, username: req.user!.email, action: 'ALLOCATION_CREATED', entityType: 'allocation', entityId: allocId, newValue: { courseId: cid, classroomId: roomId, timeSlotId: slotId, semesterId: sid, source: 'interactive-recommendation' } });
   notify({ userId: req.user!.id, type: 'ALLOCATION_PROPOSED', title: 'Allocation proposed', message: `${course.course_code} -> ${room.room_code} at ${slotLabel(slot)} (${students} students)` });
@@ -373,6 +379,9 @@ export function createAllocation(req: AuthenticatedRequest, res: Response): void
     .filter((c) => c.allocationId === id);
   for (const c of conflicts) {
     allocationRepo.addConflict(id, c.type, c.description, c.severity);
+  }
+  if (conflicts.length > 0) {
+    notify({ userId: req.user!.id, type: 'CONFLICT', title: 'Conflict detected', message: `${conflicts[0].description} (${conflicts[0].type}).` });
   }
 
   writeAuditLog({ userId: req.user!.id, username: req.user!.email, action: 'ALLOCATION_CREATED', entityType: 'allocation', entityId: id, newValue: req.body });

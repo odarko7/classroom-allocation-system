@@ -4,14 +4,8 @@ import { api } from '../api/client';
 import { useAutoRefresh } from '../api/useAutoRefresh';
 import type { AnalyticsSummary, DashboardCounts } from '../api/types';
 import { ErrorBanner, ProgressBar, Spinner } from '../components/Shared';
+import NotificationCenter from '../components/NotificationCenter';
 import { useAuth } from '../auth/AuthContext';
-
-interface NotificationItem {
-  id: number;
-  title: string;
-  message: string | null;
-  created_at: string;
-}
 
 const VIEWER_LINKS = [
   {
@@ -27,7 +21,6 @@ export default function DashboardPage() {
   const isViewer = user?.role === 'VIEWER';
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [counts, setCounts] = useState<DashboardCounts | null>(null);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,12 +28,10 @@ export default function DashboardPage() {
     Promise.all([
       api.get<AnalyticsSummary>('/analytics/summary'),
       api.get<DashboardCounts>('/dashboard'),
-      api.get<{ rows: NotificationItem[] }>('/notifications'),
     ])
-      .then(([s, c, n]) => {
+      .then(([s, c]) => {
         setSummary(s);
         setCounts(c);
-        setNotifications(n.rows.slice(0, 8));
         setError(null);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load dashboard.'))
@@ -150,26 +141,10 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h3>Recent Notifications</h3>
-          </div>
-          {notifications.length === 0 ? (
-            <div className="empty">No notifications.</div>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {notifications.map((n) => (
-                <li key={n.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{n.title}</div>
-                  <div className="text-muted" style={{ fontSize: 12 }}>
-                    {n.message ?? ''}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <div className="mt-16">
+        <NotificationCenter />
       </div>
 
       {counts?.semester && (
