@@ -1,4 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 import { api } from '../api/client';
 import { useAsync } from '../api/useAsync';
 import { useAutoRefresh } from '../api/useAutoRefresh';
@@ -56,6 +58,8 @@ export default function AllocationsPage() {
   const [confirming, setConfirming] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [bulkOptimizing, setBulkOptimizing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const allCourses = useAsync<Paginated<Course>>(() => api.get('/courses?pageSize=1000'), []);
   const allLecturers = useAsync<Paginated<Lecturer>>(() => api.get('/lecturers?pageSize=1000'), []);
@@ -192,15 +196,122 @@ export default function AllocationsPage() {
     }
   };
 
+  const fetchAllAllocations = async (): Promise<Allocation[]> => {
+    const params = new URLSearchParams({ page: '1', pageSize: '10000' });
+    if (semester) params.set('semester', semester);
+    if (statusFilter) params.set('status', statusFilter);
+    if (department) params.set('department', department);
+    if (course) params.set('course', course);
+    const all = await api.get<Paginated<Allocation>>(`/allocations?${params.toString()}`);
+    return all.rows;
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    setErrorMsg(null);
+    try {
+      const rows = await fetchAllAllocations();
+      if (!rows.length) {
+        setErrorMsg('No allocations to export.');
+        return;
+      }
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const semesterName = semesters.data?.find((s) => String(s.id) === semester)?.name;
+      const departmentName = departments.data?.find((d) => String(d.id) === department)?.name;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Classroom Allocation Schedule', 40, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 58);
+      const filters: string[] = [];
+      if (semesterName) filters.push(`Semester: ${semesterName}`);
+      if (statusFilter) filters.push(`Status: ${statusFilter}`);
+      if (departmentName) filters.push(`Department: ${departmentName}`);
+      if (course) filters.push(`Course: ${course}`);
+      if (filters.length) doc.text(filters.join('  |  '), 40, 70);
+
+      autoTable(doc, {
+        startY: 84,
+        head: [['#', 'Course', 'Group', 'Room', 'Slot', 'Lecturer', 'Status', 'Score']],
+        body: rows.map((r) => [
+          String(r.id),
+          `${r.course_code} - ${r.course_name}`,
+          r.group_name,
+          r.room_code,
+          `${dayNames[r.slot_day] ?? '?'} ${r.slot_start}-${r.slot_end}`,
+          r.lecturer_name ?? '-',
+          r.status,
+          r.total_score == null ? '-' : String(Math.round(r.total_score)),
+        ]),
+        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [63, 81, 181], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 246, 250] },
+        didDrawPage: (data) => {
+          doc.setFontSize(8);
+          doc.setTextColor(120);
+          doc.text(
+            `Page ${data.pageNumber}`,
+            doc.internal.pageSize.getWidth() - 40,
+            doc.internal.pageSize.getHeight() - 20,
+          );
+        },
+      });
+
+      doc.save('classroom-allocations.pdf');
+      setMessage(`Exported ${rows.length} allocation${rows.length === 1 ? '' : 's'} to PDF.`);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not generate the PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const text = `Classroom allocations - ${data?.total ?? 0} record(s)${statusFilter ? ` (${statusFilter})` : ''}`;
+    setSharing(true);
+    setErrorMsg(null);
+    try {
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: 'Classroom Allocations', text, url });
+          return;
+        } catch (err) {
+          if ((err as Error).name === 'AbortError') return;
+        }
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setMessage('Allocation link copied to clipboard.');
+      } else {
+        throw new Error('Sharing is not supported in this browser.');
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error && err.message ? err.message : 'Could not share the page.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex-between">
         <h1 className="page-title">Allocations</h1>
-        {canAct && (
-          <button className="btn btn-primary" onClick={openSetup}>
-            Run Optimization
+        <div className="flex gap-8">
+          <button className="btn" onClick={handleShare} disabled={sharing}>
+            {sharing ? 'Sharing...' : 'Share'}
           </button>
-        )}
+          <button className="btn" onClick={handleDownloadPdf} disabled={downloading}>
+            {downloading ? 'Generating PDF...' : 'Download PDF'}
+          </button>
+          {canAct && (
+            <button className="btn btn-primary" onClick={openSetup}>
+              Run Optimization
+            </button>
+          )}
+        </div>
       </div>
       <ErrorBanner message={errorMsg ?? error} />
       <SuccessBanner message={message} />
