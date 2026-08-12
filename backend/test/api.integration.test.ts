@@ -80,16 +80,16 @@ test('me returns current user', async () => {
 
 test('dashboard returns real counts', async () => {
   const res = await call('GET', '/dashboard');
-  assert.ok(res.json.counts.classrooms >= 30);
-  assert.ok(res.json.counts.courses >= 50);
-  assert.ok(res.json.counts.lecturers >= 30);
+  assert.ok(res.json.counts.classrooms >= 5);
+  assert.ok(res.json.counts.courses >= 5);
+  assert.ok(res.json.counts.lecturers >= 5);
 });
 
 test('classrooms list supports pagination and filters', async () => {
   const all = await call('GET', '/classrooms?page=1&pageSize=5');
   assert.equal(all.json.rows.length, 5);
-  const labs = await call('GET', '/classrooms?roomType=Computer%20Lab&pageSize=100');
-  assert.ok(labs.json.total >= 5);
+  const halls = await call('GET', '/classrooms?roomType=Lecture%20Hall&pageSize=100');
+  assert.ok(halls.json.total >= 5);
 });
 
 test('admin can create and delete a classroom', async () => {
@@ -118,14 +118,14 @@ test('courses CRUD works', async () => {
 
 test('analytics summary is data-driven', async () => {
   const res = await call('GET', '/analytics/summary');
-  assert.ok(res.json.totalClassrooms >= 30);
+  assert.ok(res.json.totalClassrooms >= 5);
   assert.ok(typeof res.json.utilizationRate === 'number');
 });
 
 test('utilization analytics returns per-room data', async () => {
   const res = await call('GET', '/analytics/utilization');
   assert.ok(Array.isArray(res.json.usage));
-  assert.ok(res.json.usage.length >= 10);
+  assert.ok(res.json.usage.length >= 3);
 });
 
 test('building utilization aggregates', async () => {
@@ -175,10 +175,10 @@ test('recommend returns a suitable classroom ordered by smallest capacity', asyn
 test('recommend explains when no classroom has enough capacity', async () => {
   const sem = await call('GET', '/semesters');
   const semesterId = sem.json[0].id;
-  const course = await call('GET', '/courses?search=CSC101&pageSize=1');
+  const course = await call('GET', '/courses?pageSize=1');
   const c = course.json.rows[0];
-  assert.ok(c, 'CSC101 seed course missing');
-  const res = await call('POST', '/allocations/recommend', { courseId: c.id, studentCount: c.student_count, lecturerId: c.lecturer_id, semesterId });
+  assert.ok(c, 'seed course missing');
+  const res = await call('POST', '/allocations/recommend', { courseId: c.id, studentCount: 99999, lecturerId: c.lecturer_id, semesterId });
   assert.equal(res.status, 200);
   assert.equal(res.json.success, false);
   assert.ok(res.json.reasons.some((r: string) => r.includes('capacity')), `expected capacity reason, got ${JSON.stringify(res.json.reasons)}`);

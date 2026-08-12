@@ -168,35 +168,63 @@ export function seedDatabase(opts?: { force?: boolean }): { message: string; cou
 
 /** Inject a few realistic conflicts to demonstrate conflict detection. */
 function injectDemoConflicts(semesterId: number): void {
-  const slots = all<{ id: number; day: number }>(`SELECT id, day FROM time_slots`);
-  if (slots.length < 2) return;
-  const approvedRoom = get<{ id: number; room_code: string }>(`SELECT id, room_code FROM classrooms ORDER BY id LIMIT 1`);
-  const groups = all<{ id: number }>(`SELECT id FROM student_groups ORDER BY id LIMIT 4`);
-  const alreadyBooked = all<{ classroom_id: number; time_slot_id: number }>(
-    `SELECT classroom_id, time_slot_id FROM allocations WHERE semester_id = ? AND status = 'APPROVED'`, [semesterId]);
-  if (!approvedRoom || groups.length < 2 || alreadyBooked.length < 2) return;
+  const approved = all<{ id: number; group_id: number; course_id: number; classroom_id: number; time_slot_id: number; lecturer_id: number | null }>(
+    `SELECT id, group_id, course_id, classroom_id, time_slot_id, lecturer_id FROM allocations WHERE semester_id = ? AND status = 'APPROVED'`, [semesterId]);
+  if (approved.length < 2) return;
 
-  // Conflict 1: double-book a room at the same slot used by an approved allocation
-  const booked = alreadyBooked[0];
-  const grp = get<{ id: number; course_id: number; lecturer_id: number | null; student_count: number }>(`SELECT * FROM student_groups WHERE semester_id = ? ORDER BY id DESC LIMIT 1`, [semesterId]);
-  if (grp) {
+  // Conflict 1: double-book a room at a slot where that (room, slot) pair is used
+  // by exactly one approved allocation. The chosen group must fit the room, and
+  // must not already be booked (group or lecturer) at that slot, so exactly one
+  // CLASSROOM_CONFLICT is produced.
+  const pairCount = new Map<string, number>();
+  for (const a of approved) {
+    const key = `${a.classroom_id}:${a.time_slot_id}`;
+    pairCount.set(key, (pairCount.get(key) ?? 0) + 1);
+  }
+  let baseSlot: number | null = null;
+  for (const candidate of approved) {
+    if (pairCount.get(`${candidate.classroom_id}:${candidate.time_slot_id}`) !== 1) continue;
+    const roomCap = get<{ capacity: number }>(`SELECT capacity FROM classrooms WHERE id = ?`, [candidate.classroom_id])?.capacity ?? 0;
+    const grp = get<{ id: number; course_id: number; lecturer_id: number | null }>(`
+      SELECT g.id, g.course_id, g.lecturer_id
+      FROM student_groups g
+      WHERE g.semester_id = ? AND g.id != ? AND g.student_count <= ?
+        AND NOT EXISTS (SELECT 1 FROM allocations a WHERE a.group_id = g.id AND a.time_slot_id = ? AND a.status != 'REJECTED')
+        AND NOT EXISTS (
+          SELECT 1 FROM allocations a JOIN student_groups g2 ON g2.id = a.group_id
+          WHERE g2.lecturer_id = g.lecturer_id AND a.time_slot_id = ? AND a.status != 'REJECTED')
+      ORDER BY g.id LIMIT 1`, [semesterId, candidate.group_id, roomCap, candidate.time_slot_id, candidate.time_slot_id]);
+    if (!grp) continue;
     const allocId = insert(`INSERT INTO allocations (group_id, course_id, classroom_id, time_slot_id, semester_id, lecturer_id, status, score)
-      VALUES (?, ?, ?, ?, ?, ?, 'APPROVED', 55)`, [grp.id, grp.course_id, booked.classroom_id, booked.time_slot_id, semesterId, grp.lecturer_id]);
+      VALUES (?, ?, ?, ?, ?, ?, 'APPROVED', 55)`, [grp.id, grp.course_id, candidate.classroom_id, candidate.time_slot_id, semesterId, grp.lecturer_id]);
     insert(`INSERT INTO allocation_conflicts (allocation_id, conflict_type, description, severity) VALUES (?, 'CLASSROOM_CONFLICT', 'Room double-booked at same time slot', 'HIGH')`, [allocId]);
+    baseSlot = candidate.time_slot_id;
+    break;
   }
 
-  // Conflict 2: lecturer double-booked
-  const lectBusy = all<{ lecturer_id: number; time_slot_id: number }>(
-    `SELECT lecturer_id, time_slot_id FROM allocations WHERE semester_id = ? AND status = 'APPROVED' AND lecturer_id IS NOT NULL LIMIT 1`, [semesterId])[0];
-  if (lectBusy) {
-    const grp2 = get<{ id: number; course_id: number; student_count: number }>(`SELECT * FROM student_groups WHERE semester_id = ? ORDER BY id DESC LIMIT 1 OFFSET 1`, [semesterId]);
+  // Conflict 2: double-book a lecturer on a room that is free at that slot, so
+  // exactly one LECTURER_CONFLICT is produced (no room or group conflict).
+  const lectSlots = all<{ lecturer_id: number; time_slot_id: number }>(
+    `SELECT DISTINCT lecturer_id, time_slot_id FROM allocations WHERE semester_id = ? AND status = 'APPROVED' AND lecturer_id IS NOT NULL`, [semesterId]);
+  for (const lb of lectSlots) {
+    if (baseSlot !== null && lb.time_slot_id === baseSlot) continue;
+    const freeRoom = get<{ id: number; capacity: number }>(`
+      SELECT c.id, c.capacity FROM classrooms c
+      WHERE c.status = 'ACTIVE'
+        AND NOT EXISTS (SELECT 1 FROM allocations a WHERE a.classroom_id = c.id AND a.time_slot_id = ? AND a.semester_id = ? AND a.status != 'REJECTED')
+      ORDER BY c.id LIMIT 1`, [lb.time_slot_id, semesterId]);
+    if (!freeRoom) continue;
+    const grp2 = get<{ id: number; course_id: number }>(`
+      SELECT g.id, g.course_id
+      FROM student_groups g
+      WHERE g.semester_id = ? AND g.lecturer_id = ? AND g.student_count <= ?
+        AND NOT EXISTS (SELECT 1 FROM allocations a WHERE a.group_id = g.id AND a.time_slot_id = ? AND a.status != 'REJECTED')
+      ORDER BY g.id LIMIT 1`, [semesterId, lb.lecturer_id, freeRoom.capacity, lb.time_slot_id]);
     if (grp2) {
-      const room2 = get<{ id: number }>(`SELECT id FROM classrooms ORDER BY id DESC LIMIT 1`);
-      if (room2) {
-        const allocId = insert(`INSERT INTO allocations (group_id, course_id, classroom_id, time_slot_id, semester_id, lecturer_id, status, score)
-          VALUES (?, ?, ?, ?, ?, ?, 'APPROVED', 50)`, [grp2.id, grp2.course_id, room2.id, lectBusy.time_slot_id, semesterId, lectBusy.lecturer_id]);
-        insert(`INSERT INTO allocation_conflicts (allocation_id, conflict_type, description, severity) VALUES (?, 'LECTURER_CONFLICT', 'Lecturer assigned to two classes at the same time', 'HIGH')`, [allocId]);
-      }
+      const allocId = insert(`INSERT INTO allocations (group_id, course_id, classroom_id, time_slot_id, semester_id, lecturer_id, status, score)
+        VALUES (?, ?, ?, ?, ?, ?, 'APPROVED', 50)`, [grp2.id, grp2.course_id, freeRoom.id, lb.time_slot_id, semesterId, lb.lecturer_id]);
+      insert(`INSERT INTO allocation_conflicts (allocation_id, conflict_type, description, severity) VALUES (?, 'LECTURER_CONFLICT', 'Lecturer assigned to two classes at the same time', 'HIGH')`, [allocId]);
+      break;
     }
   }
 }
