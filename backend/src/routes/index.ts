@@ -23,7 +23,7 @@ import {
 } from '../controllers/analyticsController.ts';
 import {
   reportHandler, reportPreviewHandler, listReportNames, miscSummary,
-  notificationsHandler, markNotificationsRead, auditLogsHandler,
+  notificationsHandler, markNotificationsRead,
 } from '../controllers/reportController.ts';
 import { authenticate, authorize } from '../middleware/auth.ts';
 import { validateBody } from '../middleware/errorHandler.ts';
@@ -136,6 +136,5 @@ router.get('/reports/:name', reportHandler);
 router.get('/dashboard', miscSummary);
 router.get('/notifications', notificationsHandler);
 router.post('/notifications/read', markNotificationsRead);
-router.get('/audit-logs', auditLogsHandler);
 
 export default router;

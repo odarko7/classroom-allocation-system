@@ -43,7 +43,6 @@ export function miscSummary(req: AuthenticatedRequest, res: Response): void {
     timeSlots: get<{ c: number }>(`SELECT COUNT(*) AS c FROM time_slots`)?.c ?? 0,
     groups: get<{ c: number }>(`SELECT COUNT(*) AS c FROM student_groups`)?.c ?? 0,
     notifications: get<{ c: number }>(`SELECT COUNT(*) AS c FROM notifications`)?.c ?? 0,
-    auditLogs: get<{ c: number }>(`SELECT COUNT(*) AS c FROM audit_logs`)?.c ?? 0,
   };
   res.json({ semester, counts });
 }
@@ -57,12 +56,4 @@ export function notificationsHandler(req: AuthenticatedRequest, res: Response): 
 export function markNotificationsRead(req: AuthenticatedRequest, res: Response): void {
   run(`UPDATE notifications SET is_read = 1`);
   res.json({ message: 'Notifications marked as read.' });
-}
-
-export function auditLogsHandler(req: AuthenticatedRequest, res: Response): void {
-  const { page = 1, pageSize = 30 } = req.query as Record<string, string>;
-  const total = get<{ c: number }>(`SELECT COUNT(*) AS c FROM audit_logs`)?.c ?? 0;
-  const offset = (Number(page) - 1) * Number(pageSize);
-  const rows = all(`SELECT * FROM audit_logs ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`, [Number(pageSize), offset]);
-  res.json({ rows, total, page: Number(page), pageSize: Number(pageSize), totalPages: Math.ceil(total / Number(pageSize)) || 1 });
 }

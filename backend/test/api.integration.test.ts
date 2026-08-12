@@ -158,11 +158,6 @@ test('report preview returns CSV structure', async () => {
   assert.ok(res.json.rowCount > 0);
 });
 
-test('audit logs are recorded', async () => {
-  const res = await call('GET', '/audit-logs');
-  assert.ok(res.json.total > 0);
-});
-
 test('notifications are recorded', async () => {
   const res = await call('GET', '/notifications');
   assert.ok(res.json.rows.length > 0);

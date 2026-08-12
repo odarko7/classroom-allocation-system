@@ -242,17 +242,6 @@ export interface NotificationItem {
   is_read: number;
 }
 
-export interface AuditLogRow {
-  id: number;
-  user_id: number | null;
-  username: string | null;
-  action: string;
-  entity_type: string | null;
-  entity_id: number | null;
-  old_value: string | null;
-  new_value: string | null;
-}
-
 export interface ReportInfo {
   name: string;
   filename: string;

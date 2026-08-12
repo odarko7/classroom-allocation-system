@@ -12,7 +12,6 @@ import ConflictsPage from './pages/ConflictsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
-import AuditLogsPage from './pages/AuditLogsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -51,7 +50,6 @@ export default function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/users" element={<UsersPage />} />
-        <Route path="/audit" element={<AuditLogsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

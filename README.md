@@ -16,7 +16,6 @@ detecting scheduling conflicts.
 - **Analytics** – utilization, building & department demand, peak periods
 - **Reports** – CSV exports (utilization, conflicts, and more)
 - **Users & Roles** – `SUPER_ADMIN`, `ADMIN`, `HOD`, `LECTURER`, `VIEWER`
-- **Audit Logs** – full action history for admins
 
 ## Tech Stack
 
@@ -172,7 +171,7 @@ Base URL: `/api`
 - `GET/POST/PUT/DELETE` – `/classrooms`, `/courses`, `/lecturers`,
   `/student-groups`, `/users`, `/allocations`
 - `POST /api/allocations/optimize` – run the allocation algorithm
-- `GET /api/conflicts`, `/api/reports`, `/api/audit-logs`
+- `GET /api/conflicts`, `/api/reports`
 - `GET /api/analytics/*` – summary, utilization, buildings, departments,
   time-demand, capacity, conflict-rate
 - Supporting: `/semesters`, `/departments`, `/facilities`, `/dashboard`,

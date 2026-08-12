@@ -22,7 +22,6 @@ const NAV_ITEMS: { to: string; label: string; icon: string; end?: boolean; roles
   { to: '/analytics', label: 'Analytics', icon: 'M3 3v18h18 M7 15l4-5 3 3 5-6' },
   { to: '/reports', label: 'Reports', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' },
   { to: '/users', label: 'Users', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/audit', label: 'Audit Logs', icon: 'M12 8v4l3 3 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', roles: ['SUPER_ADMIN', 'ADMIN'] },
 ];
 
 const VIEWER_ALLOWED = ['/', '/allocations'];
