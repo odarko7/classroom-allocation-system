@@ -146,6 +146,120 @@ test('allocations can be listed and optimized', async () => {
   assert.ok(typeof res.json.after.averageScore === 'number');
 });
 
+test('recommend returns a suitable classroom ordered by smallest capacity', async () => {
+  const sem = await call('GET', '/semesters');
+  const semesterId = sem.json[0].id;
+  const lecturers = await call('GET', '/lecturers?pageSize=100');
+  const lecturerId = lecturers.json.rows[0].id;
+
+  const created = await call('POST', '/courses', {
+    courseCode: 'REC101',
+    name: 'Recommendation Test',
+    studentCount: 60,
+    lecturerId,
+    requiredRoomType: 'Lecture Hall',
+    semesterId,
+  }, 201);
+  const courseId = created.json.id;
+
+  const res = await call('POST', '/allocations/recommend', { courseId, studentCount: 60, lecturerId, semesterId });
+  assert.equal(res.status, 200, JSON.stringify(res.json));
+  assert.ok(res.json.success, `expected a recommendation, got: ${JSON.stringify(res.json)}`);
+  assert.ok(res.json.best, 'best recommendation missing');
+  assert.ok(res.json.best.capacity >= 60, 'recommended room must fit the students');
+  assert.ok(res.json.best.timeSlotId, 'recommendation must include a time slot');
+  const capacities = res.json.suitable.map((r: any) => r.capacity);
+  assert.deepEqual(capacities, [...capacities].sort((a, b) => a - b), 'suitable rooms must be sorted smallest-first');
+});
+
+test('recommend explains when no classroom has enough capacity', async () => {
+  const sem = await call('GET', '/semesters');
+  const semesterId = sem.json[0].id;
+  const course = await call('GET', '/courses?search=CSC101&pageSize=1');
+  const c = course.json.rows[0];
+  assert.ok(c, 'CSC101 seed course missing');
+  const res = await call('POST', '/allocations/recommend', { courseId: c.id, studentCount: c.student_count, lecturerId: c.lecturer_id, semesterId });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.success, false);
+  assert.ok(res.json.reasons.some((r: string) => r.includes('capacity')), `expected capacity reason, got ${JSON.stringify(res.json.reasons)}`);
+});
+
+test('recommend requires a lecturer and student count', async () => {
+  const sem = await call('GET', '/semesters');
+  const semesterId = sem.json[0].id;
+  const course = await call('GET', '/courses?pageSize=1');
+  const c = course.json.rows[0];
+  const noLecturer = await call('POST', '/allocations/recommend', { courseId: c.id, studentCount: 10, semesterId }, 422);
+  assert.ok(noLecturer.json.error);
+  const noStudents = await call('POST', '/allocations/recommend', { courseId: c.id, lecturerId: c.lecturer_id, semesterId }, 422);
+  assert.ok(noStudents.json.error);
+});
+
+test('confirm saves a recommendation as a PROPOSED allocation', async () => {
+  const sem = await call('GET', '/semesters');
+  const semesterId = sem.json[0].id;
+  const lecturers = await call('GET', '/lecturers?pageSize=100');
+  const lecturerId = lecturers.json.rows[0].id;
+
+  const created = await call('POST', '/courses', {
+    courseCode: 'REC102',
+    name: 'Recommendation Confirm Test',
+    studentCount: 45,
+    lecturerId,
+    requiredRoomType: 'Lecture Hall',
+    semesterId,
+  }, 201);
+  const courseId = created.json.id;
+
+  const rec = await call('POST', '/allocations/recommend', { courseId, studentCount: 45, lecturerId, semesterId });
+  assert.ok(rec.json.success, JSON.stringify(rec.json));
+  const best = rec.json.best;
+
+  const confirmed = await call('POST', '/allocations/recommend/confirm', {
+    courseId,
+    studentCount: 45,
+    lecturerId,
+    semesterId,
+    classroomId: best.classroomId,
+    timeSlotId: best.timeSlotId,
+  }, 201);
+  assert.ok(confirmed.json.id, 'created allocation id missing');
+  assert.equal(confirmed.json.allocation.status, 'PROPOSED');
+  assert.equal(confirmed.json.allocation.room_code, best.roomCode);
+
+  const listed = await call('GET', '/allocations?course=REC102');
+  assert.ok(listed.json.rows.some((a: any) => a.id === confirmed.json.id), 'saved allocation should appear in the list');
+});
+
+test('confirm rejects an over-capacity classroom', async () => {
+  const sem = await call('GET', '/semesters');
+  const semesterId = sem.json[0].id;
+  const lecturers = await call('GET', '/lecturers?pageSize=100');
+  const lecturerId = lecturers.json.rows[0].id;
+
+  const created = await call('POST', '/courses', {
+    courseCode: 'REC103',
+    name: 'Recommendation Capacity Test',
+    studentCount: 200,
+    lecturerId,
+    requiredRoomType: 'Lecture Hall',
+    semesterId,
+  }, 201);
+
+  const smallRoom = await call('GET', '/classrooms?capacity=40&pageSize=1');
+  const room = smallRoom.json.rows[0];
+
+  const confirmed = await call('POST', '/allocations/recommend/confirm', {
+    courseId: created.json.id,
+    studentCount: 200,
+    lecturerId,
+    semesterId,
+    classroomId: room.id,
+    timeSlotId: sem.json[0].id,
+  }, 409);
+  assert.ok(confirmed.json.error);
+});
+
 test('conflict detection reports conflicts', async () => {
   const res = await call('GET', '/conflicts');
   assert.ok(Array.isArray(res.json));

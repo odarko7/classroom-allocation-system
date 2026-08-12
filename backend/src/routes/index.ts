@@ -15,7 +15,7 @@ import {
 import {
   listAllocations, getAllocation, runOptimization, proposeAllocation, approveAllocation,
   rejectAllocation, deleteAllocation, listConflicts, validateSemester, listStudentGroups, createGroup,
-  createAllocation,
+  createAllocation, recommendAllocation, confirmRecommendation,
 } from '../controllers/allocationController.ts';
 import {
   summaryHandler, utilizationHandler, buildingsHandler, departmentsHandler, timeDemandHandler,
@@ -108,6 +108,8 @@ router.get('/allocations', listAllocations);
 router.get('/allocations/:id', getAllocation);
 router.post('/allocations', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), createAllocation);
 router.post('/allocations/optimize', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), runOptimization);
+router.post('/allocations/recommend', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), recommendAllocation);
+router.post('/allocations/recommend/confirm', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), confirmRecommendation);
 router.post('/allocations/propose', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), proposeAllocation);
 router.post('/allocations/:id/approve', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), approveAllocation);
 router.post('/allocations/:id/reject', authorize('SUPER_ADMIN', 'ADMIN', 'HOD'), rejectAllocation);

@@ -158,6 +158,59 @@ export interface ValidationResult {
   unallocated: number;
 }
 
+export interface RecommendedRoom {
+  classroomId: number;
+  roomCode: string;
+  building: string;
+  floor: number;
+  capacity: number;
+  roomType: string;
+  facilities: string[];
+  missingFacilities: string[];
+  timeSlotId: number | null;
+  timeSlotLabel: string | null;
+  utilization: number;
+  capacityScore: number;
+  facilityScore: number;
+  score: number;
+}
+
+export interface RejectedRoom {
+  roomCode: string;
+  building: string;
+  capacity: number;
+  roomType: string;
+  reasons: string[];
+}
+
+export interface RecommendationResult {
+  success: boolean;
+  message: string;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  departmentName: string | null;
+  studentCount: number;
+  lecturerId: number | null;
+  lecturerName: string | null;
+  semesterId: number;
+  semesterName: string;
+  requiredRoomType: string | null;
+  requiredFacilities: string[];
+  suitable: RecommendedRoom[];
+  rejected: RejectedRoom[];
+  best: RecommendedRoom | null;
+  reasons: string[];
+}
+
+export interface ConfirmRecommendationResponse {
+  id: number;
+  groupId: number;
+  groupCreated: boolean;
+  message: string;
+  allocation: Allocation;
+}
+
 export interface DashboardCounts {
   semester: number | null;
   counts: Record<string, number>;

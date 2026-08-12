@@ -2,9 +2,12 @@ import type { Response } from 'express';
 import { allocationRepo } from '../repositories/allocationRepo.ts';
 import { courseRepo } from '../repositories/courseRepo.ts';
 import { groupRepo } from '../repositories/semesterRepo.ts';
-import { all, get } from '../utils/db.ts';
+import { all, get, insert, run } from '../utils/db.ts';
 import { AllocationEngine } from '../algorithm/engine.ts';
 import { optimizeAllocations } from '../algorithm/optimization.ts';
+import { buildBusyMaps, recommendRoom, slotLabel } from '../algorithm/recommendation.ts';
+import { capacityScore, combineScores, facilityScore, loadWeights } from '../algorithm/scoring.ts';
+import { lecturerRepo } from '../repositories/courseRepo.ts';
 import { ApiError, type AuthenticatedRequest } from '../middleware/auth.ts';
 import { notify, writeAuditLog } from '../services/notificationService.ts';
 import { paginate } from '../utils/db.ts';
@@ -60,6 +63,131 @@ export function runOptimization(req: AuthenticatedRequest, res: Response): void 
     notify({ userId: req.user!.id, type: 'OPTIMIZATION_FAILED', title: 'Optimization failed', message: String(err) });
     throw err;
   }
+}
+
+export function recommendAllocation(req: AuthenticatedRequest, res: Response): void {
+  const { courseId, studentCount, lecturerId, semesterId, timeSlotId } = req.body;
+  const result = recommendRoom({
+    courseId: Number(courseId),
+    studentCount: Number(studentCount),
+    lecturerId: Number(lecturerId),
+    semesterId: Number(semesterId),
+    timeSlotId: timeSlotId ? Number(timeSlotId) : null,
+  });
+  writeAuditLog({ userId: req.user!.id, username: req.user!.email, action: 'ALLOCATION_RECOMMENDED', entityType: 'course', entityId: result.courseId, newValue: { studentCount: result.studentCount, lecturerId: result.lecturerId, semesterId: result.semesterId } });
+  res.json(result);
+}
+
+export function confirmRecommendation(req: AuthenticatedRequest, res: Response): void {
+  const { courseId, studentCount, lecturerId, semesterId, classroomId, timeSlotId } = req.body;
+  if (!courseId || !studentCount || !lecturerId || !semesterId || !classroomId || !timeSlotId) {
+    throw new ApiError(422, 'courseId, studentCount, lecturerId, semesterId, classroomId and timeSlotId are required.');
+  }
+  const cid = Number(courseId);
+  const students = Number(studentCount);
+  const lid = Number(lecturerId);
+  const sid = Number(semesterId);
+  const roomId = Number(classroomId);
+  const slotId = Number(timeSlotId);
+
+  const course = get<{ id: number; course_code: string; name: string; required_room_type: string | null }>(`SELECT * FROM courses WHERE id = ?`, [cid]);
+  if (!course) throw new ApiError(404, 'Course not found.');
+  const lecturer = lecturerRepo.findById(lid);
+  if (!lecturer) throw new ApiError(404, 'Lecturer not found.');
+  if (lecturer.is_active !== 1) throw new ApiError(409, `Lecturer ${lecturer.name} is not active and cannot be assigned.`);
+  const semester = get<{ id: number }>(`SELECT * FROM semesters WHERE id = ?`, [sid]);
+  if (!semester) throw new ApiError(404, 'Semester not found.');
+  const room = get<{ id: number; room_code: string; capacity: number; room_type: string; status: string }>(`SELECT * FROM classrooms WHERE id = ?`, [roomId]);
+  if (!room) throw new ApiError(404, 'Classroom not found.');
+  if (room.status !== 'ACTIVE') throw new ApiError(409, `Classroom ${room.room_code} is not active.`);
+  const slot = get<{ id: number; day: number; start_time: string; end_time: string; period_name: string | null }>(`SELECT id, day, start_time, end_time, period_name FROM time_slots WHERE id = ?`, [slotId]);
+  if (!slot) throw new ApiError(404, 'Time slot not found.');
+
+  if (students <= 0) throw new ApiError(422, 'Number of students must be a positive integer.');
+  if (room.capacity < students) {
+    throw new ApiError(409, `Classroom capacity exceeded: ${students} students > ${room.room_code} capacity (${room.capacity}).`);
+  }
+  if (course.required_room_type && room.room_type !== course.required_room_type) {
+    throw new ApiError(409, `Room type mismatch: ${course.name} requires ${course.required_room_type}, but ${room.room_code} is a ${room.room_type}.`);
+  }
+  const requiredFacilities = all<{ name: string }>(`SELECT f.name FROM course_requirements cr JOIN facilities f ON f.id = cr.facility_id WHERE cr.course_id = ?`, [cid]).map((r) => r.name);
+  const roomFacilities = new Set(all<{ name: string }>(`SELECT f.name FROM classroom_facilities cf JOIN facilities f ON f.id = cf.facility_id WHERE cf.classroom_id = ?`, [roomId]).map((r) => r.name));
+  const missingFacilities = requiredFacilities.filter((f) => !roomFacilities.has(f));
+  if (missingFacilities.length > 0) {
+    throw new ApiError(409, `${room.room_code} is missing required facilities: ${missingFacilities.join(', ')}.`);
+  }
+
+  // Ensure the course has a student group for this semester.
+  let group = get<{ id: number; course_id: number; lecturer_id: number | null; student_count: number }>(`SELECT * FROM student_groups WHERE course_id = ? AND semester_id = ?`, [cid, sid]);
+  let groupCreated = false;
+  if (!group) {
+    group = {
+      id: insert(`INSERT INTO student_groups (name, course_id, lecturer_id, semester_id, student_count) VALUES (?, ?, ?, ?, ?)`, [`${course.course_code} Section 1`, cid, lid, sid, students]),
+      course_id: cid,
+      lecturer_id: lid,
+      student_count: students,
+    };
+    groupCreated = true;
+  } else {
+    run(`UPDATE student_groups SET student_count = ?, lecturer_id = ? WHERE id = ?`, [students, lid, group.id]);
+  }
+
+  // A course can only have one allocation in a semester.
+  const existing = all<{ id: number; status: string }>(`SELECT id, status FROM allocations WHERE group_id = ? AND semester_id = ?`, [group.id, sid]);
+  const approved = existing.find((a) => a.status === 'APPROVED');
+  if (approved) {
+    throw new ApiError(409, `${course.course_code} already has an approved allocation in this semester. Reject it first to re-allocate.`);
+  }
+  for (const a of existing) if (a.status === 'PROPOSED') allocationRepo.delete(a.id);
+
+  // Re-validate double-booking and lecturer availability, ignoring this course's own group.
+  const busy = buildBusyMaps(sid, group.id);
+  if ((busy.room.get(roomId) ?? new Set()).has(slotId)) {
+    throw new ApiError(409, `${room.room_code} is already booked for this time slot.`);
+  }
+  if ((busy.lecturer.get(lid) ?? new Set()).has(slotId)) {
+    throw new ApiError(409, `${lecturer.name} is already assigned to another class in this time slot.`);
+  }
+
+  const weights = loadWeights();
+  const score = combineScores(
+    {
+      capacity: capacityScore(students, room.capacity),
+      facilities: facilityScore(requiredFacilities, Array.from(roomFacilities)),
+      availability: 1,
+      utilization: 1,
+      location: 1,
+      department: 1,
+    },
+    weights,
+  );
+
+  const allocId = allocationRepo.create({
+    groupId: group.id, courseId: cid, classroomId: roomId, timeSlotId: slotId,
+    semesterId: sid, lecturerId: lid, status: 'PROPOSED', score, createdBy: req.user!.id,
+  });
+  allocationRepo.addScore({
+    allocationId: allocId, total: score,
+    capacity: capacityScore(students, room.capacity), facilities: facilityScore(requiredFacilities, Array.from(roomFacilities)),
+    availability: 1, utilization: 1, location: 1, department: 1,
+    explanation: JSON.stringify({ source: 'interactive-recommendation', studentCount: students, lecturerId: lid, capacitySuitable: true, facilitySuitable: true }),
+    rejectedAlternatives: '[]',
+  });
+
+  const engine = new AllocationEngine();
+  const conflicts = engine.detectConflicts(allocationRepo.findExisting(sid), sid).filter((c) => c.allocationId === allocId);
+  for (const c of conflicts) allocationRepo.addConflict(allocId, c.type, c.description, c.severity);
+
+  writeAuditLog({ userId: req.user!.id, username: req.user!.email, action: 'ALLOCATION_CREATED', entityType: 'allocation', entityId: allocId, newValue: { courseId: cid, classroomId: roomId, timeSlotId: slotId, semesterId: sid, source: 'interactive-recommendation' } });
+  notify({ userId: req.user!.id, type: 'ALLOCATION_PROPOSED', title: 'Allocation proposed', message: `${course.course_code} -> ${room.room_code} at ${slotLabel(slot)} (${students} students)` });
+  const allocation = allocationRepo.findById(allocId);
+  res.status(201).json({
+    id: allocId,
+    groupId: group.id,
+    groupCreated,
+    message: `Allocation for ${course.course_code} proposed: ${room.room_code} (capacity ${room.capacity}) at ${slotLabel(slot)}.`,
+    allocation,
+  });
 }
 
 export function proposeAllocation(req: AuthenticatedRequest, res: Response): void {
