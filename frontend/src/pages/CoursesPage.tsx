@@ -40,7 +40,8 @@ export default function CoursesPage() {
 
   const { data, loading, error, reload } = useAsync<Paginated<Course>>(() => api.get(`/courses?${query}`), [query]);
   const departments = useAsync<Department[]>(() => api.get('/departments'));
-  const lecturers = useAsync<Lecturer[]>(() => api.get('/lecturers'));
+  const allLecturers = useAsync<Paginated<Lecturer>>(() => api.get('/lecturers?pageSize=1000'));
+  const lecturers = allLecturers.data?.rows ?? [];
   const semesters = useAsync<Semester[]>(() => api.get('/semesters'));
   const facilities = useAsync<Facility[]>(() => api.get('/facilities'));
 
@@ -216,7 +217,7 @@ export default function CoursesPage() {
               <Field label="Lecturer">
                 <select className="select" value={form.lecturerId} onChange={(e) => set('lecturerId', e.target.value)}>
                   <option value="">None</option>
-                  {lecturers.data?.map((l) => (
+                  {lecturers.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
                     </option>

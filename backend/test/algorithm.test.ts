@@ -17,7 +17,7 @@ const { runEvaluation } = await import('../src/algorithm/evaluation.ts');
 const { all, get } = await import('../src/utils/db.ts');
 const { allocationRepo } = await import('../src/repositories/allocationRepo.ts');
 
-let engine: AllocationEngine;
+let engine: InstanceType<typeof AllocationEngine>;
 let semesterId: number;
 
 before(() => {

@@ -35,11 +35,36 @@ export const DEPARTMENTS = [
 const lect = (staffNo: string, name: string, deptCode: string, title: string) => ({ staffNo, name, deptCode, title });
 
 export const LECTURERS = [
+  lect('STAFF-001', 'Dr. Amina Yusuf', 'CS', 'Senior Lecturer'),
+  lect('STAFF-002', 'Prof. John Mwangi', 'CS', 'Professor'),
   lect('STAFF-003', 'Dr. Sarah Okafor', 'SE', 'Senior Lecturer'),
+  lect('STAFF-004', 'Dr. Farouk Adeleke', 'CS', 'Senior Lecturer'),
   lect('STAFF-005', 'Dr. Grace Ndlovu', 'IT', 'Senior Lecturer'),
+  lect('STAFF-006', 'Dr. Priya Sharma', 'SE', 'Senior Lecturer'),
+  lect('STAFF-007', 'Mr. David Kim', 'SE', 'Lecturer'),
+  lect('STAFF-008', 'Mr. Brian Odhiambo', 'IT', 'Lecturer'),
+  lect('STAFF-009', 'Ms. Fatima Hassan', 'IT', 'Lecturer'),
+  lect('STAFF-010', 'Dr. Peter Adebayo', 'EE', 'Senior Lecturer'),
   lect('STAFF-011', 'Dr. Cynthia Wanjiku', 'BA', 'Senior Lecturer'),
+  lect('STAFF-012', 'Prof. Linda Chen', 'EE', 'Professor'),
   lect('STAFF-013', 'Dr. Elizabeth Mensah', 'AF', 'Senior Lecturer'),
+  lect('STAFF-014', 'Dr. Tunde Alabi', 'EE', 'Senior Lecturer'),
+  lect('STAFF-015', 'Dr. Robert Smith', 'ME', 'Senior Lecturer'),
+  lect('STAFF-016', 'Ms. Naledi Mokoena', 'ME', 'Lecturer'),
+  lect('STAFF-017', 'Prof. Samuel Otieno', 'BA', 'Professor'),
+  lect('STAFF-018', 'Mr. Eric Omondi', 'BA', 'Lecturer'),
+  lect('STAFF-019', 'Dr. Carol Nyambura', 'AF', 'Senior Lecturer'),
+  lect('STAFF-020', 'Mr. Kwame Boateng', 'AF', 'Lecturer'),
+  lect('STAFF-021', 'Dr. Maryam Bello', 'NU', 'Senior Lecturer'),
+  lect('STAFF-022', 'Dr. Aisha Mohammed', 'NU', 'Senior Lecturer'),
+  lect('STAFF-023', 'Ms. Zainab Abubakar', 'NU', 'Lecturer'),
+  lect('STAFF-024', 'Dr. James Otieno', 'MLS', 'Senior Lecturer'),
+  lect('STAFF-025', 'Prof. Helen Muthoni', 'MLS', 'Professor'),
   lect('STAFF-026', 'Mr. Victor Mwangi', 'ME', 'Lecturer'),
+  lect('STAFF-027', 'Dr. Ruth Achieng', 'MLS', 'Senior Lecturer'),
+  lect('STAFF-028', 'Dr. Daniel Kariuki', 'ED', 'Senior Lecturer'),
+  lect('STAFF-029', 'Ms. Agnes Chebet', 'ED', 'Lecturer'),
+  lect('STAFF-030', 'Ms. Joyce Wairimu', 'ED', 'Lecturer'),
 ];
 
 // classroom: roomCode, building, floor, capacity, roomType, accessibility, facilities[]
