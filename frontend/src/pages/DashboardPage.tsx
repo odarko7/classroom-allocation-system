@@ -64,7 +64,6 @@ export default function DashboardPage() {
         { label: 'Classrooms', value: String(s.totalClassrooms), sub: `${s.availableClassrooms} active` },
         { label: 'Courses', value: String(s.totalCourses) },
         { label: 'Lecturers', value: String(s.totalLecturers) },
-        { label: 'Students', value: String(s.totalStudents) },
         { label: 'Allocations', value: String(s.totalAllocations), sub: `${s.approvedAllocations} approved · ${s.proposedAllocations} proposed` },
         { label: 'Conflicts', value: String(s.conflicts) },
       ]
