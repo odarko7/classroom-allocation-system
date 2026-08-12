@@ -232,11 +232,17 @@ export function approveAllocation(req: AuthenticatedRequest, res: Response): voi
   const allocation = allocationRepo.findById(id) as unknown as { semester_id: number; course_code: string; room_code: string; status: string };
   if (!allocation) throw new ApiError(404, 'Allocation not found.');
   const engine = new AllocationEngine();
-  const conflicts = engine.detectConflicts(allocationRepo.findExisting(allocation.semester_id), allocation.semester_id);
+  // Only conflicts against already approved allocations block approval. Other
+  // PROPOSED allocations can still be rejected or re-run, so they must not
+  // prevent this one from being approved.
+  const existing = allocationRepo.findExisting(allocation.semester_id);
+  const toCheck = existing.filter((a) => a.id === id || a.status === 'APPROVED');
+  const conflicts = engine.detectConflicts(toCheck, allocation.semester_id);
   const ownConflicts = conflicts.filter((c) => c.allocationId === id);
   if (ownConflicts.length > 0) {
-    throw new ApiError(409, `Cannot approve: this allocation has unresolved conflicts (${ownConflicts[0].type}).`);
+    throw new ApiError(409, `Cannot approve: this allocation conflicts with an already approved allocation (${ownConflicts[0].type}).`);
   }
+  allocationRepo.markConflictsResolved(id);
   allocationRepo.updateStatus(id, 'APPROVED', req.user!.id);
   writeAuditLog({ userId: req.user!.id, username: req.user!.email, action: 'ALLOCATION_APPROVED', entityType: 'allocation', entityId: id, oldValue: { status: 'PROPOSED' }, newValue: { status: 'APPROVED' } });
   notify({ role: 'HOD', type: 'ALLOCATION_APPROVED', title: 'Allocation approved', message: `${allocation.course_code} → ${allocation.room_code}` });
